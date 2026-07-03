@@ -5,3 +5,8 @@ compatibility_date = "2026-07-03"
 compatibility_flags = ["nodejs_compat_v2"]
 workers_dev = false
 dev.port = 3000
+
+[[d1_databases]]
+binding = "e_quiz_db"
+database_name = "e-quiz-db"
+database_id = "dbf03e26-6f61-4c99-9174-836da531c23b"
