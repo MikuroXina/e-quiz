@@ -5,8 +5,10 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "start": "wrangler pages dev ./build/client",
+    "deploy": "wrangler pages deploy ./build/client",
     "typecheck": "react-router typegen && tsc",
+    "generate-types": "wrangler types",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
@@ -20,9 +22,12 @@
     "isbot": "^5.1.36",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router": "8.0.0"
+    "react-router": "8.0.0",
+    "valibot": "^1.4.2"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.42.4",
+    "@react-router/cloudflare": "^8.1.0",
     "@react-router/dev": "8.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^22",
@@ -31,6 +36,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",
-    "vite-plus": "^0.2.1"
+    "vite-plus": "^0.2.1",
+    "wrangler": "^4.106.0"
   }
 }
