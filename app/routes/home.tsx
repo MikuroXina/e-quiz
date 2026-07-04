@@ -1,4 +1,4 @@
-import { Card, Surface, Typography } from "@heroui/react";
+import { Button, Card, Input, Label, Modal, Surface, Typography } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 
 interface Course {
@@ -6,7 +6,7 @@ interface Course {
   name: string;
 }
 
-export default function Home() {
+export default function Home(): React.JSX.Element {
   const courses: Course[] = [{ id: "foo1", name: "整数論I" }];
   return (
     <>
@@ -16,7 +16,10 @@ export default function Home() {
           <NavBar title="ホーム" />
         </Surface>
         <div className="h-full p-4">
-          <Typography type="h2">講座一覧</Typography>
+          <div className="flex justify-between">
+            <Typography type="h2">講座一覧</Typography>
+            <AddCourseButton />
+          </div>
           <div className="flex flex-col gap-2">
             {courses.map(({ id, name }) => (
               <Card key={id}>
@@ -29,5 +32,32 @@ export default function Home() {
         </div>
       </div>
     </>
+  );
+}
+
+function AddCourseButton() {
+  return (
+    <Modal>
+      <Button>講座を新規追加</Button>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>新規講座の情報を入力</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="course_name">名前</Label>
+                <Input id="course_name" className="min-w-8" placeholder="某講座" />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button>追加する</Button>
+            </Modal.Footer>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 }
