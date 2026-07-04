@@ -13,7 +13,7 @@ export function NavBar({ title }: NavBarProps): React.JSX.Element {
       </div>
       <div className="p-2">
         <Link to="/log_out">
-          <Button variant="danger-soft">Log Out</Button>
+          <Button variant="danger-soft">ログアウト</Button>
         </Link>
       </div>
     </nav>
