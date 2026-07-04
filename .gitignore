@@ -8,3 +8,4 @@
 
 # Cloudflare Wrangler dev env
 .wrangler/
+.dev.vars
