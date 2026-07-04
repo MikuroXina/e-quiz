@@ -1,4 +1,4 @@
-import { Button, Card, Input, Label, Modal, Surface, Typography } from "@heroui/react";
+import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 
 interface Course {
@@ -7,7 +7,7 @@ interface Course {
 }
 
 export default function Home(): React.JSX.Element {
-  const courses: Course[] = [{ id: "foo1", name: "整数論I" }];
+  const courses: Course[] = [];
   return (
     <>
       <title>ホーム - e-Quiz</title>
@@ -21,13 +21,17 @@ export default function Home(): React.JSX.Element {
             <AddCourseButton />
           </div>
           <div className="flex flex-col gap-2">
-            {courses.map(({ id, name }) => (
-              <Card key={id}>
-                <Card.Content>
-                  <Typography type="h3">{name}</Typography>
-                </Card.Content>
-              </Card>
-            ))}
+            {courses.length === 0 ? (
+              <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
+            ) : (
+              courses.map(({ id, name }) => (
+                <Card key={id}>
+                  <Card.Content>
+                    <Typography type="h3">{name}</Typography>
+                  </Card.Content>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>
