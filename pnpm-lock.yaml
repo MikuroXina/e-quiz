@@ -20,6 +20,9 @@ importers:
       '@react-router/serve':
         specifier: 8.0.0
         version: 8.0.0(react-router@8.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
+      auth0:
+        specifier: ^5.13.0
+        version: 5.13.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)
@@ -60,6 +63,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.3
+        version: 6.0.3(vite@8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -1740,6 +1746,19 @@ packages:
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
 
+  '@vitejs/plugin-react@6.0.3':
+    resolution: {integrity: sha512-vmFvco5/QuC2f9Oj+wTk0+9XeDFkHxSamwZKYc7MxYwKICfvUvlMhqKI0VuICPltGqh1neqBKDvO4kes1ya8vg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0
+      babel-plugin-react-compiler: ^1.0.0
+      vite: ^8.0.0
+    peerDependenciesMeta:
+      '@rolldown/plugin-babel':
+        optional: true
+      babel-plugin-react-compiler:
+        optional: true
+
   '@vitest/browser-preview@4.1.9':
     resolution: {integrity: sha512-a4/OrkMDb/WUnE4OOB/4FJbK3rYVO7YykqtUgcTKG4p2a0R3XcjPVu7SLRHFBs2+NIYhv5yxp1Lz3dbdGBjIow==}
     peerDependencies:
@@ -1919,6 +1938,14 @@ packages:
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
     engines: {node: '>=12'}
+
+  auth0@4.37.1:
+    resolution: {integrity: sha512-o9ca0P+hHSUbiwOSFW+DS2GmCA5c6T6E1UJZhWcgKmjAI2Aid16wLzY4/y+XNFb7Im1rM+wQc5YkkNZuTy5FOw==}
+    engines: {node: '>=18'}
+
+  auth0@5.13.0:
+    resolution: {integrity: sha512-/xExT44bBr1cxcb833osSvN78QPJxLl/Z2K6zxAuk2iJXXx/Zue1NKodWjKyolIeCQ9aI4mq713xZ9dSuLw1eQ==}
+    engines: {node: ^20.19.0 || ^22.12.0 || ^24.0.0}
 
   babel-dead-code-elimination@1.0.12:
     resolution: {integrity: sha512-GERT7L2TiYcYDtYk1IpD+ASAYXjKbLTDPhBtYj7X1NuRMDTMtAx9kyBenub1Ev41lo91OHCKdmP+egTDmfQ7Ig==}
@@ -2340,6 +2367,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@4.15.9:
+    resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -2881,6 +2911,10 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
+    hasBin: true
 
   valibot@1.4.2:
     resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
@@ -4306,6 +4340,11 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
+  '@vitejs/plugin-react@6.0.3(vite@8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)
+
   '@vitest/browser-preview@4.1.9(vite@8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))(vitest@4.1.9)':
     dependencies:
       '@testing-library/dom': 10.4.1
@@ -4434,6 +4473,18 @@ snapshots:
       dequal: 2.0.3
 
   assertion-error@2.0.1: {}
+
+  auth0@4.37.1:
+    dependencies:
+      jose: 4.15.9
+      undici-types: 6.21.0
+      uuid: 11.1.1
+
+  auth0@5.13.0:
+    dependencies:
+      auth0-legacy: auth0@4.37.1
+      jose: 4.15.9
+      uuid: 11.1.1
 
   babel-dead-code-elimination@1.0.12:
     dependencies:
@@ -4826,6 +4877,8 @@ snapshots:
   isbot@5.1.44: {}
 
   jiti@2.7.0: {}
+
+  jose@4.15.9: {}
 
   js-tokens@4.0.0: {}
 
@@ -5406,6 +5459,8 @@ snapshots:
   use-sync-external-store@1.6.0(react@19.2.7):
     dependencies:
       react: 19.2.7
+
+  uuid@11.1.1: {}
 
   valibot@1.4.2(typescript@5.9.3):
     optionalDependencies:

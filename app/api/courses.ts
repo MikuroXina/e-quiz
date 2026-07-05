@@ -1,4 +1,4 @@
-import { SessionContext } from "~/lib/session";
+import { AuthContext } from "~/lib/session";
 import type { Route } from "../+types/root";
 import * as v from "valibot";
 import { CloudflareContext } from "~/lib/cloudflare";
@@ -18,7 +18,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
   const body = parseRes.output;
 
-  const session = context.get(SessionContext);
+  const session = context.get(AuthContext);
   if (session.type !== "teacher") {
     console.log("forbidden user: ", session);
     return { success: false };

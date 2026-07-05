@@ -1,10 +1,23 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { createContext, createCookieSessionStorage } from "react-router";
+import { createContext, createCookieSessionStorage, redirect } from "react-router";
 import type { teacher } from "~/db/schema";
 import type { Route } from "../+types/root";
 import { CloudflareContext } from "./cloudflare";
 
-export const SessionContext = createContext<
+export const oauthStateStorage = (env: Env) =>
+  createCookieSessionStorage({
+    cookie: {
+      name: "__e_quiz_oauth_session",
+      secrets: [env.COOKIE_SECRET],
+      sameSite: "lax",
+      path: "/",
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      maxAge: 5 * 60,
+    },
+  });
+
+export const AuthContext = createContext<
   | {
       type: "teacher";
       id: InferSelectModel<typeof teacher>["id"];
@@ -31,10 +44,11 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   });
   const session = await storage.getSession(request.headers.get("Cookie"));
   if (session.has("teacher_id")) {
-    context.set(SessionContext, {
+    context.set(AuthContext, {
       type: "teacher",
       id: session.get("teacher_id"),
     });
+    return;
   }
-  // TODO: redirect to log in if there is no valid session
+  throw redirect("/log_in");
 };

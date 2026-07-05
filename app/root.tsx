@@ -24,7 +24,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-// export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
