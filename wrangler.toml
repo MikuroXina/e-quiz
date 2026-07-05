@@ -2,9 +2,9 @@
 name = "e-quiz"
 main = "./worker/index.ts"
 compatibility_date = "2026-07-03"
-compatibility_flags = ["nodejs_compat_v2"]
+compatibility_flags = ["nodejs_compat_v2", "enable_nodejs_fs_module"]
 workers_dev = false
-dev.port = 3000
+dev.port = 8787
 
 [vars]
 AUTH0_AUDIENCE = "https://mikuroxina.jp.auth0.com/api/v2/"
