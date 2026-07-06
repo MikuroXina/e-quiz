@@ -18,7 +18,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const stateSession = await oauthStateStorage(env).getSession();
   const stateRes = v.safeParse(v.string(), stateSession.get("state"));
   if (!stateRes.success) {
-    console.log("invalid session");
+    console.log("invalid session: ", stateRes.issues);
     return redirect("/log_in");
   }
 
