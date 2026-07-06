@@ -236,7 +236,7 @@ function EditCourseNameButton({ courseId, oldName }: { courseId: string; oldName
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="course_name">名前</Label>
                   <Input
-                    id="course_name"
+                    id="new_course_name"
                     name="course_name"
                     className="min-w-8"
                     placeholder="某講座"
