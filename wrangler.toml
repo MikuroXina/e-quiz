@@ -18,7 +18,7 @@ database_id = "dbf03e26-6f61-4c99-9174-836da531c23b"
 migrations_dir = "drizzle/migrations"
 
 [assets]
-run_worker_first = true
+run_worker_first = ["!/app/*", "!/public/*", "/*"]
 not_found_handling = "single-page-application"
 
 [env.production.vars]
