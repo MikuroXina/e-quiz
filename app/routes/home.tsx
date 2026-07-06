@@ -58,7 +58,7 @@ export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData>
   return { type: "teacher", name: res[0].name, courses };
 }
 
-const postCoursesSchema = v.object({
+const postCourseSchema = v.object({
   name: v.pipe(v.string(), v.nonEmpty()),
 });
 
@@ -100,7 +100,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
   }
 
-  const parseRes = v.safeParse(postCoursesSchema, form);
+  const parseRes = v.safeParse(postCourseSchema, form);
   if (!parseRes.success) {
     console.log("bad parameter: ", form);
     return { success: false };
