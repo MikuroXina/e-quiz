@@ -50,5 +50,12 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
     });
     return;
   }
+
+  context.set(AuthContext, {
+    type: "unauthorized",
+  });
+  if (request.url.endsWith("/log_in")) {
+    return;
+  }
   throw redirect("/log_in");
 };
