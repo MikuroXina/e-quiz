@@ -19,6 +19,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     client_id: env.AUTH0_CLIENT_ID,
     redirect_uri: new URL("/callback", request.url).href,
     state,
+    scope: ["openid", "profile", "email"].join(" "),
   });
   const link = new URL("/authorize?" + params, env.AUTH0_AUDIENCE).href;
   return data(
