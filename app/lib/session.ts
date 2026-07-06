@@ -5,7 +5,7 @@ import type { Route } from "../+types/root";
 import { CloudflareContext } from "./cloudflare";
 
 export const getOAuthStateStorage = (env: Env) =>
-  createCookieSessionStorage({
+  createCookieSessionStorage<{ state: string }>({
     cookie: {
       name: "__e_quiz_oauth_session",
       secrets: [env.COOKIE_SECRET],
@@ -18,7 +18,7 @@ export const getOAuthStateStorage = (env: Env) =>
   });
 
 export const getAuthStorage = (env: Env) =>
-  createCookieSessionStorage({
+  createCookieSessionStorage<{ teacher_id: string }>({
     cookie: {
       name: "__e_quiz_session",
       secrets: [env.COOKIE_SECRET],
@@ -46,10 +46,11 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   const cloudflare = context.get(CloudflareContext);
   const storage = getAuthStorage(cloudflare.env);
   const session = await storage.getSession(request.headers.get("Cookie"));
-  if (session.has("teacher_id")) {
+  const teacherId = session.get("teacher_id");
+  if (teacherId != null) {
     context.set(AuthContext, {
       type: "teacher",
-      id: session.get("teacher_id"),
+      id: teacherId,
     });
     return;
   }
