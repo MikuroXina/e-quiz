@@ -1,5 +1,5 @@
 import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { NavBar } from "~/organisms/nav-bar";
 import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
@@ -107,9 +107,11 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
             ) : (
               loaderData.courses.map(({ id, name }) => (
                 <Card key={id}>
-                  <Card.Content>
-                    <Typography type="h3">{name}</Typography>
-                  </Card.Content>
+                  <Link to={`/courses/${id}`}>
+                    <Card.Content>
+                      <Typography type="h3">{name}</Typography>
+                    </Card.Content>
+                  </Link>
                 </Card>
               ))
             )}
