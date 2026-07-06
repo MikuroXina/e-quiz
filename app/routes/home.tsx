@@ -1,5 +1,5 @@
 import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
-import { Form } from "react-router";
+import { useFetcher } from "react-router";
 import { NavBar } from "~/organisms/nav-bar";
 import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
@@ -7,6 +7,7 @@ import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import { course, teacher } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import * as v from "valibot";
 
 interface Course {
   id: string;
@@ -46,6 +47,45 @@ export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData>
   return { type: "teacher", name: res[0].name, courses };
 }
 
+const postCoursesSchema = v.object({
+  name: v.pipe(v.string(), v.nonEmpty()),
+});
+
+export async function action({ request, context }: Route.ActionArgs) {
+  const form = Object.fromEntries(await request.formData());
+  const parseRes = v.safeParse(postCoursesSchema, form);
+  if (!parseRes.success) {
+    console.log("bad parameter: ", form);
+    return { success: false };
+  }
+  const body = parseRes.output;
+
+  const auth = context.get(AuthContext);
+  if (auth.type !== "teacher") {
+    console.log("forbidden user: ", auth);
+    return { success: false };
+  }
+
+  const { env } = context.get(CloudflareContext);
+  const db = drizzle(env.e_quiz_db);
+  const newId = crypto.randomUUID();
+  try {
+    const res = await db
+      .insert(course)
+      .values({
+        id: newId,
+        name: body.name,
+        owner: auth.id,
+      })
+      .execute();
+    console.log(res);
+    return { success: true };
+  } catch (err: unknown) {
+    console.log("failed to add a new course: ", err);
+    return { success: false };
+  }
+}
+
 export default function Home({ loaderData }: Route.ComponentProps): React.JSX.Element {
   return (
     <>
@@ -81,6 +121,8 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
 }
 
 function AddCourseButton() {
+  const fetcher = useFetcher({ key: "courses" });
+
   return (
     <Modal>
       <Button>講座を新規追加</Button>
@@ -92,13 +134,7 @@ function AddCourseButton() {
               <Modal.Heading>新規講座の情報を入力</Modal.Heading>
             </Modal.Header>
             <Modal.Body>
-              <Form
-                action="/api/courses"
-                method="POST"
-                encType="multipart/form-data"
-                navigate={false}
-                className="flex flex-col gap-4"
-              >
+              <fetcher.Form method="POST" className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="course_name">名前</Label>
                   <Input
@@ -112,7 +148,7 @@ function AddCourseButton() {
                 <Button className="self-end" type="submit">
                   追加する
                 </Button>
-              </Form>
+              </fetcher.Form>
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

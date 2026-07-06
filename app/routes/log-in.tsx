@@ -1,6 +1,6 @@
 import { CloudflareContext } from "~/lib/cloudflare";
 import type { Route } from "./+types/log-in";
-import { Button } from "@heroui/react";
+import { Button, Typography } from "@heroui/react";
 import { getOAuthStateStorage } from "~/lib/session";
 import { data } from "react-router";
 
@@ -34,10 +34,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function LogInCallback({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="p-4">
-      <a href={loaderData.link}>
-        <Button>ログイン</Button>
-      </a>
-    </div>
+    <main className="p-4">
+      <Typography type="h1">e-quiz ログイン</Typography>
+      <div className="mt-4">
+        <a href={loaderData.link}>
+          <Button>ログイン / 新規登録</Button>
+        </a>
+      </div>
+    </main>
   );
 }
