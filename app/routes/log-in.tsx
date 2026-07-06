@@ -7,7 +7,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(CloudflareContext);
   const buf = new Uint8Array(16);
   crypto.getRandomValues(buf);
-  const state = Array.from(buf, (byte) => byte.toString(16).padStart(2, "0")).join(" ");
+  const state = Array.from(buf, (byte) => byte.toString(16).padStart(2, "0")).join("");
   const session = await oauthStateStorage(env).getSession(request.headers.get("Cookie"));
   session.set("state", state);
 
