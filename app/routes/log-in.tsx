@@ -18,7 +18,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     redirect_uri: new URL("/callback", request.url).href,
     state,
   });
-  const link = new URL("/authorize" + params, env.AUTH0_AUDIENCE).href;
+  const link = new URL("/authorize?" + params, env.AUTH0_AUDIENCE).href;
   return { link };
 }
 
