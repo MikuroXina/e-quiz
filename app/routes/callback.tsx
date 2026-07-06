@@ -1,4 +1,4 @@
-import { oauthStateStorage, AuthContext } from "~/lib/session";
+import { getOAuthStateStorage, AuthContext, getAuthStorage } from "~/lib/session";
 import type { Route } from "./+types/callback";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as v from "valibot";
@@ -6,6 +6,7 @@ import { redirect } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { teacher } from "~/db/schema";
 import { UserInfoClient } from "auth0";
+import { eq } from "drizzle-orm";
 
 const getTokenResponseSchema = v.object({
   access_token: v.string(),
@@ -15,11 +16,18 @@ const getTokenResponseSchema = v.object({
 
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(CloudflareContext);
-  const stateSession = await oauthStateStorage(env).getSession();
+  const stateStorage = getOAuthStateStorage(env);
+  const stateSession = await stateStorage.getSession();
   const stateRes = v.safeParse(v.string(), stateSession.get("state"));
+  const returnToLogInResponse = async () =>
+    redirect("/log_in", {
+      headers: {
+        "Set-Cookie": await stateStorage.destroySession(stateSession),
+      },
+    });
   if (!stateRes.success) {
     console.log("invalid session: ", stateRes.issues);
-    return redirect("/log_in");
+    return await returnToLogInResponse();
   }
 
   const state = stateRes.output;
@@ -30,7 +38,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const requestBodyRes = v.safeParse(auth0CallbackRequestSchema, await request.json());
   if (!requestBodyRes.success) {
     console.log("invalid callback params: ", requestBodyRes.issues);
-    return redirect("/log_in");
+    return await returnToLogInResponse();
   }
   const { code } = requestBodyRes.output;
 
@@ -49,34 +57,49 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   });
   if (!getTokenRes.ok) {
     console.log("get token failure: ", await getTokenRes.text());
-    return redirect("/log_in");
+    return await returnToLogInResponse();
   }
   const getTokenReturnRes = v.safeParse(getTokenResponseSchema, await getTokenRes.json());
   if (!getTokenReturnRes.success) {
     console.log("invalid response: ", getTokenReturnRes.issues);
-    return redirect("/log_in");
+    return await returnToLogInResponse();
   }
   const { access_token } = getTokenReturnRes.output;
 
-  const { data: user } = await new UserInfoClient({
-    domain: env.AUTH0_DOMAIN,
-  }).getUserInfo(access_token);
+  try {
+    const { data: user } = await new UserInfoClient({
+      domain: env.AUTH0_DOMAIN,
+    }).getUserInfo(access_token);
 
-  const newId = crypto.randomUUID();
-  await drizzle(env.e_quiz_db)
-    .insert(teacher)
-    .values({
-      id: newId,
-      name: user.name,
-    })
-    .execute();
+    const db = drizzle(env.e_quiz_db);
 
-  context.set(AuthContext, {
-    type: "teacher",
-    id: newId,
-  });
+    const teacherQuery = await db
+      .select()
+      .from(teacher)
+      .where(eq(teacher.id, user.sub))
+      .limit(1)
+      .execute();
+    if (teacherQuery.length === 0) {
+      await db
+        .insert(teacher)
+        .values({
+          id: user.sub,
+          name: user.name,
+        })
+        .execute();
 
-  return redirect("/");
+      const headers = new Headers();
+      const authStorage = getAuthStorage(env);
+      const authSession = await authStorage.getSession();
+      authSession.set("teacher_id", user.sub);
+      headers.set("Set-Cookie", await authStorage.commitSession(authSession));
+      headers.set("Set-Cookie", await stateStorage.destroySession(stateSession));
+      return redirect("/", { headers });
+    }
+  } catch (err: unknown) {
+    console.log("create user transaction error: ", err);
+    return await returnToLogInResponse();
+  }
 }
 
 export default function LogInCallback() {

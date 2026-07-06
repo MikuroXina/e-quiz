@@ -1,15 +1,17 @@
 import { CloudflareContext } from "~/lib/cloudflare";
 import type { Route } from "./+types/log-in";
 import { Button } from "@heroui/react";
-import { oauthStateStorage } from "~/lib/session";
+import { getOAuthStateStorage } from "~/lib/session";
+import { data } from "react-router";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(CloudflareContext);
   const buf = new Uint8Array(16);
   crypto.getRandomValues(buf);
   const state = Array.from(buf, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  const session = await oauthStateStorage(env).getSession(request.headers.get("Cookie"));
-  session.set("state", state);
+  const stateStorage = getOAuthStateStorage(env);
+  const stateSession = await stateStorage.getSession(request.headers.get("Cookie"));
+  stateSession.set("state", state);
 
   const params = new URLSearchParams({
     audience: env.AUTH0_AUDIENCE,
@@ -19,7 +21,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     state,
   });
   const link = new URL("/authorize?" + params, env.AUTH0_AUDIENCE).href;
-  return { link };
+  return data(
+    { link },
+    {
+      headers: {
+        "Set-Cookie": await stateStorage.commitSession(stateSession),
+      },
+    },
+  );
 }
 
 export default function LogInCallback({ loaderData }: Route.ComponentProps) {
