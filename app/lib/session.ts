@@ -1,5 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { createContext, createCookieSessionStorage, redirect } from "react-router";
+import { createContext, createCookieSessionStorage } from "react-router";
 import type { teacher } from "~/db/schema";
 import type { Route } from "../+types/root";
 import { CloudflareContext } from "./cloudflare";
@@ -57,5 +57,4 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   if (request.url.endsWith("/log_in")) {
     return;
   }
-  throw redirect("/log_in");
 };
