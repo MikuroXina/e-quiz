@@ -3,22 +3,27 @@ import type { Route } from "./+types/course";
 import { redirect, useFetcher } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
-import { course, teacher } from "~/db/schema";
+import { content, course, teacher } from "~/db/schema";
 import { and, eq } from "drizzle-orm";
 import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
+import * as v from "valibot";
 
 interface Content {
   id: string;
-  name: string;
+  title: string;
+}
+
+interface LoaderData {
+  userName: string;
+  course: { id: string; name: string };
+  contents: readonly Content[];
 }
 
 export async function loader({
   params: { course_id },
   context,
-}: Route.LoaderArgs): Promise<
-  Response | { userName: string; course: { id: string; name: string } }
-> {
+}: Route.LoaderArgs): Promise<Response | LoaderData> {
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
     return redirect(`/log-in?back=/courses/${course_id}`);
@@ -41,13 +46,56 @@ export async function loader({
     });
   }
 
-  return { userName: teacherRes[0].name, course: courseRes[0] };
+  const contents = await db
+    .select({ id: content.id, title: content.title })
+    .from(content)
+    .where(eq(content.container, courseRes[0].id));
+
+  return { userName: teacherRes[0].name, course: courseRes[0], contents };
+}
+
+const postContentSchema = v.object({
+  name: v.pipe(v.string(), v.nonEmpty()),
+  container: v.pipe(v.string(), v.nonEmpty()),
+});
+
+export async function action({ request, context }: Route.ActionArgs) {
+  const auth = context.get(AuthContext);
+  if (auth.type === "unauthorized") {
+    return new Response(null, { status: 403 });
+  }
+
+  const formData = await request.formData();
+  const bodyRes = v.safeParse(postContentSchema, Object.fromEntries(formData.entries()));
+  if (!bodyRes.success) {
+    console.log("bad parameter: ", bodyRes.issues);
+    return { success: false };
+  }
+  const body = bodyRes.output;
+
+  const { env } = context.get(CloudflareContext);
+  const db = drizzle(env.e_quiz_db);
+  const newId = crypto.randomUUID();
+  try {
+    await db
+      .insert(content)
+      .values({
+        id: newId,
+        container: body.container,
+        title: body.name,
+        content: "",
+      })
+      .execute();
+    return { success: true };
+  } catch (err: unknown) {
+    console.log("failed to insert a new content: ", body);
+    return { success: false };
+  }
 }
 
 export default function Course({
-  loaderData: { userName, course },
+  loaderData: { userName, course, contents },
 }: Route.ComponentProps): React.JSX.Element {
-  const contents: Content[] = [];
   return (
     <>
       <title>{`講座 ${course.name} - e-Quiz`}</title>
@@ -58,16 +106,16 @@ export default function Course({
         <div className="h-full p-4">
           <div className="flex justify-between">
             <Typography type="h2">コンテンツ一覧</Typography>
-            <AddContentButton />
+            <AddContentButton courseId={course.id} />
           </div>
           <div className="flex flex-col gap-2">
             {contents.length === 0 ? (
               <EmptyState>「コンテンツを新規追加」ボタンからコンテンツを追加しましょう</EmptyState>
             ) : (
-              contents.map(({ id, name }) => (
+              contents.map(({ id, title }) => (
                 <Card key={id}>
                   <Card.Content>
-                    <Typography type="h3">{name}</Typography>
+                    <Typography type="h3">{title}</Typography>
                   </Card.Content>
                 </Card>
               ))
@@ -79,7 +127,7 @@ export default function Course({
   );
 }
 
-function AddContentButton() {
+function AddContentButton({ courseId }: { courseId: string }) {
   const fetcher = useFetcher({ key: "contents" });
 
   return (
@@ -94,10 +142,11 @@ function AddContentButton() {
             </Modal.Header>
             <Modal.Body>
               <fetcher.Form method="POST" className="flex flex-col gap-4">
+                <input type="hidden" name="container" value={courseId} />
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="course_name">名前</Label>
                   <Input
-                    id="course_name"
+                    id="content_name"
                     name="name"
                     className="min-w-8"
                     placeholder="某コンテンツ"
