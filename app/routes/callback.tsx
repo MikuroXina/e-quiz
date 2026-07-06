@@ -1,4 +1,4 @@
-import { getOAuthStateStorage, AuthContext, getAuthStorage } from "~/lib/session";
+import { getOAuthStateStorage, getAuthStorage } from "~/lib/session";
 import type { Route } from "./+types/callback";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as v from "valibot";
@@ -18,19 +18,18 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(CloudflareContext);
   const stateStorage = getOAuthStateStorage(env);
   const stateSession = await stateStorage.getSession();
-  const stateRes = v.safeParse(v.string(), stateSession.get("state"));
+  const state = stateSession.get("state");
   const returnToLogInResponse = async () =>
     redirect("/log_in", {
       headers: {
         "Set-Cookie": await stateStorage.destroySession(stateSession),
       },
     });
-  if (!stateRes.success) {
-    console.log("invalid session: ", stateRes.issues);
+  if (state == null) {
+    console.log("invalid session");
     return await returnToLogInResponse();
   }
 
-  const state = stateRes.output;
   const auth0CallbackRequestSchema = v.object({
     state: v.literal(state),
     code: v.string(),
