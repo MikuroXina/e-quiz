@@ -12,6 +12,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const stateStorage = getOAuthStateStorage(env);
   const stateSession = await stateStorage.getSession(request.headers.get("Cookie"));
   stateSession.set("state", state);
+  const back = new URL(request.url).searchParams.get("back") ?? "/";
+  stateSession.set("back", back);
 
   const params = new URLSearchParams({
     audience: env.AUTH0_AUDIENCE,

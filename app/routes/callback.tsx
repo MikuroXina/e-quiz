@@ -96,7 +96,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     authSession.set("teacher_id", user.sub);
     headers.append("Set-Cookie", await authStorage.commitSession(authSession));
     headers.append("Set-Cookie", await stateStorage.destroySession(stateSession));
-    return redirect("/", { headers });
+
+    const back = stateSession.get("back") ?? "/";
+    return redirect(new URL(back, request.url).href, { headers });
   } catch (err: unknown) {
     console.log("create user transaction error: ", err);
     return await returnToLogInResponse();

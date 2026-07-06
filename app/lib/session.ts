@@ -5,7 +5,7 @@ import type { Route } from "../+types/root";
 import { CloudflareContext } from "./cloudflare";
 
 export const getOAuthStateStorage = (env: Env) =>
-  createCookieSessionStorage<{ state: string }>({
+  createCookieSessionStorage<{ state: string; back: string }>({
     cookie: {
       name: "__e_quiz_oauth_session",
       secrets: [env.COOKIE_SECRET],
