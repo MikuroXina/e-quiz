@@ -87,15 +87,15 @@ export async function loader({ context, request }: Route.LoaderArgs) {
           name: user.name,
         })
         .execute();
-
-      const headers = new Headers();
-      const authStorage = getAuthStorage(env);
-      const authSession = await authStorage.getSession();
-      authSession.set("teacher_id", user.sub);
-      headers.set("Set-Cookie", await authStorage.commitSession(authSession));
-      headers.set("Set-Cookie", await stateStorage.destroySession(stateSession));
-      return redirect("/", { headers });
     }
+
+    const headers = new Headers();
+    const authStorage = getAuthStorage(env);
+    const authSession = await authStorage.getSession();
+    authSession.set("teacher_id", user.sub);
+    headers.set("Set-Cookie", await authStorage.commitSession(authSession));
+    headers.set("Set-Cookie", await stateStorage.destroySession(stateSession));
+    return redirect("/", { headers });
   } catch (err: unknown) {
     console.log("create user transaction error: ", err);
     return await returnToLogInResponse();
