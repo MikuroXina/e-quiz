@@ -17,7 +17,7 @@ const getTokenResponseSchema = v.object({
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { env } = context.get(CloudflareContext);
   const stateStorage = getOAuthStateStorage(env);
-  const stateSession = await stateStorage.getSession();
+  const stateSession = await stateStorage.getSession(request.headers.get("Cookie"));
   const state = stateSession.get("state");
   const returnToLogInResponse = async () =>
     redirect("/log_in", {
@@ -34,7 +34,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     state: v.literal(state),
     code: v.string(),
   });
-  const requestBodyRes = v.safeParse(auth0CallbackRequestSchema, await request.json());
+  const params = Object.fromEntries(new URL(request.url).searchParams.entries());
+  const requestBodyRes = v.safeParse(auth0CallbackRequestSchema, params);
   if (!requestBodyRes.success) {
     console.log("invalid callback params: ", requestBodyRes.issues);
     return await returnToLogInResponse();
@@ -45,6 +46,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     grant_type: "authorization_code",
     client_id: env.AUTH0_CLIENT_ID,
     client_secret: env.AUTH0_CLIENT_SECRET,
+    redirect_uri: new URL("/callback", request.url),
     code,
   };
   const getTokenRes = await fetch(new URL("/oauth/token", env.AUTH0_AUDIENCE), {
@@ -90,7 +92,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
     const headers = new Headers();
     const authStorage = getAuthStorage(env);
-    const authSession = await authStorage.getSession();
+    const authSession = await authStorage.getSession(request.headers.get("Cookie"));
     authSession.set("teacher_id", user.sub);
     headers.set("Set-Cookie", await authStorage.commitSession(authSession));
     headers.set("Set-Cookie", await stateStorage.destroySession(stateSession));
