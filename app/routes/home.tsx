@@ -1,47 +1,58 @@
 import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
 import { Form } from "react-router";
-import { NavBar, type User } from "~/organisms/nav-bar";
+import { NavBar } from "~/organisms/nav-bar";
 import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
-import { teacher } from "~/db/schema";
+import { course, teacher } from "~/db/schema";
 import { eq } from "drizzle-orm";
-
-interface LoaderData {
-  user: User;
-}
 
 interface Course {
   id: string;
   name: string;
 }
 
+type LoaderData =
+  | {
+      type: "unauthorized";
+    }
+  | { type: "teacher"; name: string; courses: readonly Course[] };
+
 export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData> {
   const { env } = context.get(CloudflareContext);
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
-    return { user: { type: "unauthorized" } };
+    return { type: "unauthorized" };
   }
-  const res = await drizzle(env.e_quiz_db)
+  const db = drizzle(env.e_quiz_db);
+  const res = await db
     .select({ name: teacher.name })
     .from(teacher)
     .where(eq(teacher.id, auth.id))
     .limit(1);
   if (res.length === 0) {
-    return { user: { type: "unauthorized" } };
+    return { type: "unauthorized" };
   }
-  return { user: { type: "teacher", name: res[0].name } };
+
+  const courses = await db
+    .select({
+      id: course.id,
+      name: course.name,
+    })
+    .from(course)
+    .where(eq(course.owner, auth.id));
+
+  return { type: "teacher", name: res[0].name, courses };
 }
 
-export default function Home({ loaderData: { user } }: Route.ComponentProps): React.JSX.Element {
-  const courses: Course[] = [];
+export default function Home({ loaderData }: Route.ComponentProps): React.JSX.Element {
   return (
     <>
       <title>ホーム - e-Quiz</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title="ホーム" user={user} />
+          <NavBar title="ホーム" user={loaderData} />
         </Surface>
         <div className="h-full p-4">
           <div className="flex justify-between">
@@ -49,10 +60,12 @@ export default function Home({ loaderData: { user } }: Route.ComponentProps): Re
             <AddCourseButton />
           </div>
           <div className="flex flex-col gap-2">
-            {courses.length === 0 ? (
+            {loaderData.type === "unauthorized" ? (
+              <EmptyState>右上の「ログイン」ボタンからログインしましょう</EmptyState>
+            ) : loaderData.courses.length === 0 ? (
               <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
             ) : (
-              courses.map(({ id, name }) => (
+              loaderData.courses.map(({ id, name }) => (
                 <Card key={id}>
                   <Card.Content>
                     <Typography type="h3">{name}</Typography>
