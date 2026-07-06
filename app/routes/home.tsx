@@ -234,7 +234,7 @@ function EditCourseNameButton({ courseId, oldName }: { courseId: string; oldName
               <fetcher.Form method="PUT" className="flex flex-col gap-4">
                 <input type="hidden" name="course_id" value={courseId} />
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="course_name">名前</Label>
+                  <Label htmlFor="new_course_name">名前</Label>
                   <Input
                     id="new_course_name"
                     name="course_name"
