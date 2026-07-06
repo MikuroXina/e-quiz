@@ -8,16 +8,20 @@ import { drizzle } from "drizzle-orm/d1";
 import { teacher } from "~/db/schema";
 import { eq } from "drizzle-orm";
 
+interface LoaderData {
+  user: User;
+}
+
 interface Course {
   id: string;
   name: string;
 }
 
-export async function loader({ context }: Route.LoaderArgs): Promise<User> {
+export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData> {
   const { env } = context.get(CloudflareContext);
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
-    return { type: "unauthorized" };
+    return { user: { type: "unauthorized" } };
   }
   const res = await drizzle(env.e_quiz_db)
     .select({ name: teacher.name })
@@ -25,19 +29,19 @@ export async function loader({ context }: Route.LoaderArgs): Promise<User> {
     .where(eq(teacher.id, auth.id))
     .limit(1);
   if (res.length === 0) {
-    return { type: "unauthorized" };
+    return { user: { type: "unauthorized" } };
   }
-  return { type: "teacher", name: res[0].name };
+  return { user: { type: "teacher", name: res[0].name } };
 }
 
-export default function Home({ loaderData }: Route.ComponentProps): React.JSX.Element {
+export default function Home({ loaderData: { user } }: Route.ComponentProps): React.JSX.Element {
   const courses: Course[] = [];
   return (
     <>
       <title>ホーム - e-Quiz</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title="ホーム" user={loaderData} />
+          <NavBar title="ホーム" user={user} />
         </Surface>
         <div className="h-full p-4">
           <div className="flex justify-between">

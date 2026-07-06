@@ -43,8 +43,8 @@ export const AuthContext = createContext<
 });
 
 export const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
-  const cloudflare = context.get(CloudflareContext);
-  const storage = getAuthStorage(cloudflare.env);
+  const { env } = context.get(CloudflareContext);
+  const storage = getAuthStorage(env);
   const session = await storage.getSession(request.headers.get("Cookie"));
   const teacherId = session.get("teacher_id");
   if (teacherId != null) {
@@ -58,7 +58,4 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   context.set(AuthContext, {
     type: "unauthorized",
   });
-  if (request.url.endsWith("/log_in")) {
-    return;
-  }
 };

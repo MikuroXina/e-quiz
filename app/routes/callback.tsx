@@ -94,8 +94,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     const authStorage = getAuthStorage(env);
     const authSession = await authStorage.getSession(request.headers.get("Cookie"));
     authSession.set("teacher_id", user.sub);
-    headers.set("Set-Cookie", await authStorage.commitSession(authSession));
-    headers.set("Set-Cookie", await stateStorage.destroySession(stateSession));
+    headers.append("Set-Cookie", await authStorage.commitSession(authSession));
+    headers.append("Set-Cookie", await stateStorage.destroySession(stateSession));
     return redirect("/", { headers });
   } catch (err: unknown) {
     console.log("create user transaction error: ", err);

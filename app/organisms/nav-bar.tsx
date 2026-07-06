@@ -16,14 +16,14 @@ export function NavBar({ title, user }: NavBarProps): React.JSX.Element {
       </div>
       <div className="p-2">
         {user.type === "teacher" ? (
-          <div>
-            ようこそ {user.name} さん
+          <div className="flex items-center gap-2">
+            <span>ようこそ {user.name} さん</span>
             <Link to="/log_out">
               <Button variant="danger-soft">ログアウト</Button>
             </Link>
           </div>
         ) : (
-          <Link to="/">
+          <Link to="/log_in">
             <Button>ログイン</Button>
           </Link>
         )}
