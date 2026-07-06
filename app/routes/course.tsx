@@ -50,10 +50,10 @@ export default function Course({
   const contents: Content[] = [];
   return (
     <>
-      <title>講座 {course.name} - e-Quiz</title>
+      <title>{`講座 ${course.name} - e-Quiz`}</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title="ホーム" user={{ type: "teacher", name: userName }} />
+          <NavBar title={`講座 ${course.name}`} user={{ type: "teacher", name: userName }} />
         </Surface>
         <div className="h-full p-4">
           <div className="flex justify-between">

@@ -45,6 +45,9 @@ importers:
       '@cloudflare/vite-plugin':
         specifier: ^1.42.4
         version: 1.42.4(vite@8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))(workerd@1.20260630.1)(wrangler@4.106.0(@cloudflare/workers-types@4.20260702.1))
+      '@gravity-ui/icons':
+        specifier: ^2.20.0
+        version: 2.20.0(react@19.2.7)
       '@react-router/cloudflare':
         specifier: ^8.1.0
         version: 8.1.0(@cloudflare/workers-types@4.20260702.1)(react-router@8.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)
@@ -776,6 +779,14 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
+
+  '@gravity-ui/icons@2.20.0':
+    resolution: {integrity: sha512-0plcxNqMYX+P8H+J1dY0IgMFBSWJYlMWRo0tAczgIlUICQE4sdyOOTxwgBZQLz8qQ4aIsGabzU5Yr6IJVzuNyg==}
+    peerDependencies:
+      react: '*'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@heroui/react@3.2.1':
     resolution: {integrity: sha512-dEwOFHd2I199dm6nXynK96xeqeQZH2zcFlY8BaoqAjNNvVg24X4/dFua8GuayD2KS6FNX65/2BQhlxiV3ByFrQ==}
@@ -3605,6 +3616,12 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.2':
     dependencies:
       tslib: 2.8.1
+
+  '@gravity-ui/icons@2.20.0(react@19.2.7)':
+    dependencies:
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.7
 
   '@heroui/react@3.2.1(@react-spectrum/provider@3.11.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
     dependencies:

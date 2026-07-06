@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.42.4",
+    "@gravity-ui/icons": "^2.20.0",
     "@react-router/cloudflare": "^8.1.0",
     "@react-router/dev": "8.0.0",
     "@tailwindcss/vite": "^4.2.2",

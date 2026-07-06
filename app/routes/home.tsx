@@ -1,4 +1,14 @@
-import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Label,
+  Modal,
+  Surface,
+  Tooltip,
+  Typography,
+} from "@heroui/react";
 import { Link, useFetcher } from "react-router";
 import { NavBar } from "~/organisms/nav-bar";
 import type { Route } from "./+types/home";
@@ -8,6 +18,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { course, teacher } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
+import Pencil from "@gravity-ui/icons/Pencil";
 
 interface Course {
   id: string;
@@ -51,8 +62,44 @@ const postCoursesSchema = v.object({
   name: v.pipe(v.string(), v.nonEmpty()),
 });
 
+const putCourseSchema = v.object({
+  course_id: v.pipe(v.string(), v.nonEmpty()),
+  course_name: v.pipe(v.string(), v.nonEmpty()),
+});
+
 export async function action({ request, context }: Route.ActionArgs) {
+  const auth = context.get(AuthContext);
+  if (auth.type !== "teacher") {
+    console.log("forbidden user: ", auth);
+    return { success: false };
+  }
+
   const form = Object.fromEntries(await request.formData());
+  if (request.method === "PUT") {
+    const parseRes = v.safeParse(putCourseSchema, form);
+    if (!parseRes.success) {
+      console.log("bad parameter: ", form);
+      return { success: false };
+    }
+    const body = parseRes.output;
+
+    const { env } = context.get(CloudflareContext);
+    const db = drizzle(env.e_quiz_db);
+    try {
+      await db
+        .update(course)
+        .set({
+          name: body.course_name,
+        })
+        .where(eq(course.id, body.course_id))
+        .execute();
+      return { success: true };
+    } catch (err: unknown) {
+      console.log("failed to change name of the course: ", err);
+      return { success: false };
+    }
+  }
+
   const parseRes = v.safeParse(postCoursesSchema, form);
   if (!parseRes.success) {
     console.log("bad parameter: ", form);
@@ -60,17 +107,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
   const body = parseRes.output;
 
-  const auth = context.get(AuthContext);
-  if (auth.type !== "teacher") {
-    console.log("forbidden user: ", auth);
-    return { success: false };
-  }
-
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
   const newId = crypto.randomUUID();
   try {
-    const res = await db
+    await db
       .insert(course)
       .values({
         id: newId,
@@ -78,7 +119,6 @@ export async function action({ request, context }: Route.ActionArgs) {
         owner: auth.id,
       })
       .execute();
-    console.log(res);
     return { success: true };
   } catch (err: unknown) {
     console.log("failed to add a new course: ", err);
@@ -107,11 +147,19 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
             ) : (
               loaderData.courses.map(({ id, name }) => (
                 <Card key={id}>
-                  <Link to={`/courses/${id}`}>
-                    <Card.Content>
-                      <Typography type="h3">{name}</Typography>
-                    </Card.Content>
-                  </Link>
+                  <Card.Content>
+                    <div className="flex justify-between">
+                      <Link to={`/courses/${id}`}>
+                        <Typography type="h3">{name}</Typography>
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <EditCourseNameButton courseId={id} oldName={name} />
+                        <Link to={`/courses/${id}`}>
+                          <Button variant="ghost">開く</Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </Card.Content>
                 </Card>
               ))
             )}
@@ -149,6 +197,55 @@ function AddCourseButton() {
                 </div>
                 <Button className="self-end" type="submit">
                   追加する
+                </Button>
+              </fetcher.Form>
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  );
+}
+
+function EditCourseNameButton({ courseId, oldName }: { courseId: string; oldName: string }) {
+  const fetcher = useFetcher({ key: "courses" });
+
+  return (
+    <Modal>
+      <Tooltip delay={0}>
+        <Tooltip.Trigger>
+          <Button variant="secondary">
+            <Pencil />
+          </Button>
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          <Tooltip.Arrow />
+          講座情報を編集
+        </Tooltip.Content>
+      </Tooltip>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>講座「{oldName}」の新しい名前を入力</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>
+              <fetcher.Form method="PUT" className="flex flex-col gap-4">
+                <input type="hidden" name="course_id" value={courseId} />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="course_name">名前</Label>
+                  <Input
+                    id="course_name"
+                    name="course_name"
+                    className="min-w-8"
+                    placeholder="某講座"
+                    required
+                    defaultValue={oldName}
+                  />
+                </div>
+                <Button className="self-end" type="submit">
+                  変更する
                 </Button>
               </fetcher.Form>
             </Modal.Body>
