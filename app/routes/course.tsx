@@ -86,7 +86,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     const bodyRes = v.safeParse(putContentSchema, formData);
     if (!bodyRes.success) {
       console.log("bad parameter", bodyRes.issues);
-      return { success: false };
+      return new Response(null, { status: 400 });
     }
     const body = bodyRes.output;
 
@@ -101,14 +101,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       return { success: true };
     } catch (err: unknown) {
       console.log("failed to update title of the content: ", err);
-      return { success: false };
+      return new Response(null, { status: 500 });
     }
   }
 
   const bodyRes = v.safeParse(postContentSchema, formData);
   if (!bodyRes.success) {
     console.log("bad parameter: ", bodyRes.issues);
-    return { success: false };
+    return new Response(null, { status: 400 });
   }
   const body = bodyRes.output;
 
@@ -128,7 +128,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { success: true };
   } catch (err: unknown) {
     console.log("failed to insert a new content: ", body);
-    return { success: false };
+    return new Response(null, { status: 500 });
   }
 }
 

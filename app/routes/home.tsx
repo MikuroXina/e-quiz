@@ -70,8 +70,7 @@ const putCourseSchema = v.object({
 export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
   if (auth.type !== "teacher") {
-    console.log("forbidden user: ", auth);
-    return { success: false };
+    return new Response(null, { status: 403 });
   }
 
   const form = Object.fromEntries(await request.formData());
@@ -79,7 +78,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     const parseRes = v.safeParse(putCourseSchema, form);
     if (!parseRes.success) {
       console.log("bad parameter: ", form);
-      return { success: false };
+      return new Response(null, { status: 400 });
     }
     const body = parseRes.output;
 
@@ -96,14 +95,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       return { success: true };
     } catch (err: unknown) {
       console.log("failed to change name of the course: ", err);
-      return { success: false };
+      return new Response(null, { status: 500 });
     }
   }
 
   const parseRes = v.safeParse(postCourseSchema, form);
   if (!parseRes.success) {
     console.log("bad parameter: ", form);
-    return { success: false };
+    return new Response(null, { status: 400 });
   }
   const body = parseRes.output;
 
@@ -122,7 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { success: true };
   } catch (err: unknown) {
     console.log("failed to add a new course: ", err);
-    return { success: false };
+    return new Response(null, { status: 500 });
   }
 }
 
