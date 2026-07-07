@@ -93,7 +93,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     const headers = new Headers();
     const authStorage = getAuthStorage(env);
     const authSession = await authStorage.getSession(request.headers.get("Cookie"));
-    authSession.set("teacher_id", user.sub);
+    authSession.set("accessToken", access_token);
     headers.append("Set-Cookie", await authStorage.commitSession(authSession));
     headers.append("Set-Cookie", await stateStorage.destroySession(stateSession));
 
