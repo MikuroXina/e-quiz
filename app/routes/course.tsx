@@ -1,6 +1,6 @@
 import { AuthContext } from "~/lib/session";
 import type { Route } from "./+types/course";
-import { redirect, useFetcher } from "react-router";
+import { Link, redirect, useFetcher } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { content, course, teacher } from "~/db/schema";
@@ -156,7 +156,12 @@ export default function Course({
                   <Card.Content>
                     <div className="flex justify-between">
                       <Typography type="h3">{title}</Typography>
-                      <EditContentTitleButton contentId={id} oldTitle={title} />
+                      <div className="flex items-center gap-2">
+                        <EditContentTitleButton contentId={id} oldTitle={title} />
+                        <Link to={`/courses/${course.id}/contents/${id}`}>
+                          <Button variant="ghost">開く</Button>
+                        </Link>
+                      </div>
                     </div>
                   </Card.Content>
                 </Card>
