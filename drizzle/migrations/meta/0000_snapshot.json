@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d46daa42-47ea-494e-b1e3-521fc5d14b50",
+  "id": "cabadce7-ebb7-472c-84c0-178e36843bd1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "content": {
@@ -14,11 +14,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "container": {
-          "name": "container",
+        "containerId": {
+          "name": "containerId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "title": {
@@ -38,12 +38,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "content_container_course_id_fk": {
-          "name": "content_container_course_id_fk",
+        "content_containerId_course_id_fk": {
+          "name": "content_containerId_course_id_fk",
           "tableFrom": "content",
           "tableTo": "course",
           "columnsFrom": [
-            "container"
+            "containerId"
           ],
           "columnsTo": [
             "id"
@@ -66,11 +66,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "owner": {
-          "name": "owner",
+        "ownerId": {
+          "name": "ownerId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "name": {
@@ -83,12 +83,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "course_owner_teacher_id_fk": {
-          "name": "course_owner_teacher_id_fk",
+        "course_ownerId_teacher_id_fk": {
+          "name": "course_ownerId_teacher_id_fk",
           "tableFrom": "course",
           "tableTo": "teacher",
           "columnsFrom": [
-            "owner"
+            "ownerId"
           ],
           "columnsTo": [
             "id"
@@ -108,14 +108,14 @@
           "name": "courseId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "studentId": {
           "name": "studentId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         }
       },
@@ -171,12 +171,27 @@
           "notNull": true,
           "autoincrement": false
         },
-        "container": {
-          "name": "container",
+        "containerId": {
+          "name": "containerId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
         },
         "solution": {
           "name": "solution",
@@ -184,16 +199,33 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "choices": {
+          "name": "choices",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "id_order": {
+          "name": "id_order",
+          "columns": [
+            "id",
+            "order"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
-        "quiz_container_content_id_fk": {
-          "name": "quiz_container_content_id_fk",
+        "quiz_containerId_content_id_fk": {
+          "name": "quiz_containerId_content_id_fk",
           "tableFrom": "quiz",
           "tableTo": "content",
           "columnsFrom": [
-            "container"
+            "containerId"
           ],
           "columnsTo": [
             "id"
@@ -233,18 +265,18 @@
     "submission": {
       "name": "submission",
       "columns": {
-        "createdBy": {
-          "name": "createdBy",
+        "createdById": {
+          "name": "createdById",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "sentTo": {
-          "name": "sentTo",
+        "sentToId": {
+          "name": "sentToId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "createdAt": {
@@ -264,12 +296,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "submission_createdBy_student_id_fk": {
-          "name": "submission_createdBy_student_id_fk",
+        "submission_createdById_student_id_fk": {
+          "name": "submission_createdById_student_id_fk",
           "tableFrom": "submission",
           "tableTo": "student",
           "columnsFrom": [
-            "createdBy"
+            "createdById"
           ],
           "columnsTo": [
             "id"
@@ -277,12 +309,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "submission_sentTo_quiz_id_fk": {
-          "name": "submission_sentTo_quiz_id_fk",
+        "submission_sentToId_quiz_id_fk": {
+          "name": "submission_sentToId_quiz_id_fk",
           "tableFrom": "submission",
           "tableTo": "quiz",
           "columnsFrom": [
-            "sentTo"
+            "sentToId"
           ],
           "columnsTo": [
             "id"

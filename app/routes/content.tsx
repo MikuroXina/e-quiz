@@ -4,13 +4,23 @@ import { Button, Label, Surface, TextArea } from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
 import { redirect, useFetcher } from "react-router";
-import { content, course, teacher } from "~/db/schema";
+import { content, course } from "~/db/schema";
+import * as schema from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
 import { useEffect, useState } from "react";
 
-type LoaderData = {
+const choicesSchema = v.array(v.string());
+
+interface Quiz {
+  id: string;
+  description: string;
+  solution: number;
+  choices: readonly string[];
+}
+
+interface LoaderData {
   userName: string;
   course: {
     id: string;
@@ -20,8 +30,9 @@ type LoaderData = {
     id: string;
     title: string;
     body: string;
+    quizzes: readonly Quiz[];
   };
-};
+}
 
 export async function loader({
   params,
@@ -33,18 +44,18 @@ export async function loader({
   }
 
   const { env } = context.get(CloudflareContext);
-  const db = drizzle(env.e_quiz_db);
-
-  const userRes = await db
-    .select({ name: teacher.name })
-    .from(teacher)
-    .where(eq(teacher.id, auth.id))
-    .limit(1);
-  if (userRes.length === 0) {
+  const db = drizzle(env.e_quiz_db, { schema });
+  const user = await db.query.teacher.findFirst({
+    columns: {
+      name: true,
+    },
+    where: (teacher, { eq }) => eq(teacher.id, auth.id),
+  });
+  if (user == null) {
     return redirect(`/log_in?back=/courses/${params.course_id}/contents/${params.content_id}`);
   }
 
-  const queries = await db
+  const contentRes = await db
     .select({
       courseId: course.id,
       courseName: course.name,
@@ -53,24 +64,35 @@ export async function loader({
       contentBody: content.content,
     })
     .from(content)
-    .innerJoin(course, eq(content.container, course.id))
-    .where(eq(course.owner, auth.id))
+    .innerJoin(course, eq(content.containerId, course.id))
+    .where(eq(course.ownerId, auth.id))
     .limit(1);
 
-  if (queries.length === 0) {
+  if (contentRes.length === 0) {
     return new Response(null, { status: 404 });
   }
-  const [query] = queries;
+
+  const quizzesRes = await db.query.quiz.findMany({
+    where: (quizzes, { eq }) => eq(quizzes.containerId, contentRes[0].contentId),
+    orderBy: (quizzes, { asc }) => asc(quizzes.order),
+  });
+
   return {
-    userName: userRes[0].name,
+    userName: user.name,
     course: {
-      id: query.courseId,
-      name: query.courseName,
+      id: contentRes[0].courseId,
+      name: contentRes[0].courseName,
     },
     content: {
-      id: query.contentId,
-      title: query.contentTitle,
-      body: query.contentBody,
+      id: contentRes[0].contentId,
+      title: contentRes[0].contentTitle,
+      body: contentRes[0].contentBody,
+      quizzes: quizzesRes.map(({ id, description, solution, choices }) => ({
+        id,
+        description,
+        solution,
+        choices: v.parse(choicesSchema, JSON.parse(choices)),
+      })),
     },
   };
 }
@@ -154,7 +176,7 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
                   placeholder={"# 見出し 1\n…"}
                   onInput={() => setIsSaved(false)}
                   defaultValue={loaderData.content.body}
-                  rows={32}
+                  rows={16}
                   fullWidth
                 />
               </Label>
