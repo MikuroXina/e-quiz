@@ -131,7 +131,7 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
       <title>ホーム - e-Quiz</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title="ホーム" user={loaderData} />
+          <NavBar title="ホーム" user={loaderData} hideHistoryBack />
         </Surface>
         <div className="h-full p-4">
           <div className="flex justify-between">

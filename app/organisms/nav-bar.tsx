@@ -1,17 +1,28 @@
 import { Button, Typography } from "@heroui/react";
 import { Link } from "react-router";
+import ArrowUturnCcwLeft from "@gravity-ui/icons/ArrowUturnCcwLeft";
 
 export type User = { type: "teacher"; name: string } | { type: "unauthorized" };
 
 export interface NavBarProps {
   title: string;
   user: User;
+  hideHistoryBack?: boolean;
 }
 
-export function NavBar({ title, user }: NavBarProps): React.JSX.Element {
+function historyBack() {
+  history.back();
+}
+
+export function NavBar({ title, user, hideHistoryBack }: NavBarProps): React.JSX.Element {
   return (
     <nav className="flex items-center justify-between">
-      <div className="p-2">
+      <div className="flex gap-2 p-2">
+        {!hideHistoryBack && (
+          <Button onClick={historyBack} variant="ghost">
+            <ArrowUturnCcwLeft />
+          </Button>
+        )}
         <Typography type="h1">{title}</Typography>
       </div>
       <div className="p-2">
