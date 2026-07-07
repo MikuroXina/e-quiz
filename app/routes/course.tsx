@@ -5,9 +5,20 @@ import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { content, course, teacher } from "~/db/schema";
 import { and, eq } from "drizzle-orm";
-import { Button, Card, EmptyState, Input, Label, Modal, Surface, Typography } from "@heroui/react";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Label,
+  Modal,
+  Surface,
+  Tooltip,
+  Typography,
+} from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
+import Pencil from "@gravity-ui/icons/Pencil";
 
 interface Content {
   id: string;
@@ -26,7 +37,7 @@ export async function loader({
 }: Route.LoaderArgs): Promise<Response | LoaderData> {
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
-    return redirect(`/log-in?back=/courses/${course_id}`);
+    return redirect(`/log_in?back=/courses/${course_id}`);
   }
 
   const { env } = context.get(CloudflareContext);
@@ -59,14 +70,42 @@ const postContentSchema = v.object({
   container: v.pipe(v.string(), v.nonEmpty()),
 });
 
+const putContentSchema = v.object({
+  content_id: v.pipe(v.string(), v.nonEmpty()),
+  content_title: v.pipe(v.string(), v.nonEmpty()),
+});
+
 export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
     return new Response(null, { status: 403 });
   }
 
-  const formData = await request.formData();
-  const bodyRes = v.safeParse(postContentSchema, Object.fromEntries(formData.entries()));
+  const formData = Object.fromEntries((await request.formData()).entries());
+  if (request.method === "PUT") {
+    const bodyRes = v.safeParse(putContentSchema, formData);
+    if (!bodyRes.success) {
+      console.log("bad parameter", bodyRes.issues);
+      return { success: false };
+    }
+    const body = bodyRes.output;
+
+    const { env } = context.get(CloudflareContext);
+    const db = drizzle(env.e_quiz_db);
+    try {
+      await db
+        .update(content)
+        .set({ title: body.content_title })
+        .where(eq(content.id, body.content_id))
+        .execute();
+      return { success: true };
+    } catch (err: unknown) {
+      console.log("failed to update title of the content: ", err);
+      return { success: false };
+    }
+  }
+
+  const bodyRes = v.safeParse(postContentSchema, formData);
   if (!bodyRes.success) {
     console.log("bad parameter: ", bodyRes.issues);
     return { success: false };
@@ -115,7 +154,10 @@ export default function Course({
               contents.map(({ id, title }) => (
                 <Card key={id}>
                   <Card.Content>
-                    <Typography type="h3">{title}</Typography>
+                    <div className="flex justify-between">
+                      <Typography type="h3">{title}</Typography>
+                      <EditContentTitleButton contentId={id} oldTitle={title} />
+                    </div>
                   </Card.Content>
                 </Card>
               ))
@@ -144,9 +186,9 @@ function AddContentButton({ courseId }: { courseId: string }) {
               <fetcher.Form method="POST" className="flex flex-col gap-4">
                 <input type="hidden" name="container" value={courseId} />
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="course_name">名前</Label>
+                  <Label htmlFor="content_title">名前</Label>
                   <Input
-                    id="content_name"
+                    id="content_title"
                     name="name"
                     className="min-w-8"
                     placeholder="某コンテンツ"
@@ -155,6 +197,55 @@ function AddContentButton({ courseId }: { courseId: string }) {
                 </div>
                 <Button className="self-end" type="submit">
                   追加する
+                </Button>
+              </fetcher.Form>
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  );
+}
+
+function EditContentTitleButton({ contentId, oldTitle }: { contentId: string; oldTitle: string }) {
+  const fetcher = useFetcher({ key: "courses" });
+
+  return (
+    <Modal>
+      <Tooltip delay={0}>
+        <Tooltip.Trigger>
+          <Button variant="secondary">
+            <Pencil />
+          </Button>
+        </Tooltip.Trigger>
+        <Tooltip.Content>
+          <Tooltip.Arrow />
+          コンテンツ情報を編集
+        </Tooltip.Content>
+      </Tooltip>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>コンテンツ「{oldTitle}」の新しい名前を入力</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>
+              <fetcher.Form method="PUT" className="flex flex-col gap-4">
+                <input type="hidden" name="content_id" value={contentId} />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="new_content_title">名前</Label>
+                  <Input
+                    id="new_content_title"
+                    name="content_title"
+                    className="min-w-8"
+                    placeholder="某コンテンツ"
+                    required
+                    defaultValue={oldTitle}
+                  />
+                </div>
+                <Button className="self-end" type="submit">
+                  変更する
                 </Button>
               </fetcher.Form>
             </Modal.Body>
