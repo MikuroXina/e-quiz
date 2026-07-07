@@ -1,12 +1,14 @@
 import { CloudflareContext } from "~/lib/cloudflare";
 import type { Route } from "./+types/content";
-import { Surface, TextArea } from "@heroui/react";
+import { Button, Label, Surface, TextArea } from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
-import { redirect } from "react-router";
+import { redirect, useFetcher } from "react-router";
 import { content, course, teacher } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
+import * as v from "valibot";
+import { useEffect, useState } from "react";
 
 type LoaderData = {
   userName: string;
@@ -73,11 +75,61 @@ export async function loader({
   };
 }
 
+const putBodySchema = v.object({
+  content_id: v.pipe(v.string(), v.nonEmpty()),
+  content_body: v.string(),
+});
+
+type ActionResponse = { success: true };
+
+export async function action({
+  request,
+  context,
+}: Route.ActionArgs): Promise<Response | ActionResponse> {
+  const auth = context.get(AuthContext);
+  if (auth.type === "unauthorized") {
+    return new Response(null, { status: 403 });
+  }
+
+  const formData = Object.fromEntries(await request.formData());
+  const bodyRes = v.safeParse(putBodySchema, formData);
+  if (!bodyRes.success) {
+    console.log("bad parameter: ", bodyRes.issues);
+    return new Response(null, { status: 400 });
+  }
+  const body = bodyRes.output;
+
+  const { env } = context.get(CloudflareContext);
+  const db = drizzle(env.e_quiz_db);
+  try {
+    await db
+      .update(content)
+      .set({
+        content: body.content_body,
+      })
+      .where(eq(content.id, body.content_id))
+      .execute();
+    return { success: true };
+  } catch (err: unknown) {
+    console.log("failed to update body of the content: ", err);
+    return new Response(null, { status: 500 });
+  }
+}
+
 export default function Content({ loaderData }: Route.ComponentProps): React.JSX.Element {
+  const [isSaved, setIsSaved] = useState(true);
+  const fetcher = useFetcher<ActionResponse>({ key: "content" });
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data === null) {
+      // reactivate save button when failed to save
+      setIsSaved(false);
+    }
+  }, [fetcher.state, fetcher.data]);
+
   return (
     <>
       <title>{`コンテンツ ${loaderData.content.title} - e-Quiz`}</title>
-
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
           <NavBar
@@ -86,9 +138,28 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
           />
         </Surface>
         <div className="h-full p-4">
-          <div>
-            <TextArea defaultValue={loaderData.content.body} />
-          </div>
+          <fetcher.Form method="PUT" onSubmit={() => setIsSaved(true)}>
+            <input type="hidden" name="content_id" value={loaderData.content.id} />
+            <div className="mb-2">
+              <Button type="submit" isDisabled={isSaved}>
+                保存
+              </Button>
+            </div>
+            <div>
+              <Label>
+                本文
+                <TextArea
+                  className="outline outline-gray-200 outline-solid"
+                  name="content_body"
+                  placeholder={"# 見出し 1\n…"}
+                  onInput={() => setIsSaved(false)}
+                  defaultValue={loaderData.content.body}
+                  rows={32}
+                  fullWidth
+                />
+              </Label>
+            </div>
+          </fetcher.Form>
         </div>
       </div>
     </>
