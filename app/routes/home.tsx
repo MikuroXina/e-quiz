@@ -137,7 +137,7 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
         <div className="h-full p-4">
           <div className="flex justify-between">
             <Typography type="h2">講座一覧</Typography>
-            <AddCourseButton />
+            {loaderData.type === "teacher" && <AddCourseButton />}
           </div>
           <div className="flex flex-col gap-2">
             {loaderData.type === "unauthorized" ? (
