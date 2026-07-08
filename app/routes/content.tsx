@@ -302,6 +302,18 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
     }
   }, [fetcher.state, fetcher.data]);
 
+  useEffect(() => {
+    const confirmUnsaved = (e: BeforeUnloadEvent) => {
+      if (!isSaved) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", confirmUnsaved);
+    return () => {
+      window.removeEventListener("beforeunload", confirmUnsaved);
+    };
+  }, [isSaved]);
+
   return (
     <>
       <title>{`コンテンツ ${loaderData.content.title} - e-Quiz`}</title>
