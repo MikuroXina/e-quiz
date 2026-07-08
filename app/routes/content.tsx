@@ -1,14 +1,27 @@
 import { CloudflareContext } from "~/lib/cloudflare";
 import type { Route } from "./+types/content";
-import { Button, Label, Surface, TextArea } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  Modal,
+  Radio,
+  RadioGroup,
+  Surface,
+  TextArea,
+} from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
 import { redirect, useFetcher } from "react-router";
 import * as schema from "~/db/schema";
-import { and, eq, inArray, max, SQL, sql } from "drizzle-orm";
+import { eq, inArray, SQL, sql } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import TrashBin from "@gravity-ui/icons/TrashBin";
+import ArrowUp from "@gravity-ui/icons/ArrowUp";
+import ArrowDown from "@gravity-ui/icons/ArrowDown";
 
 const choicesSchema = v.array(v.string());
 
@@ -96,7 +109,7 @@ export async function loader({
   };
 }
 
-const putBodySchema = v.union([
+const putBodySchema = v.variant("type", [
   v.object({
     type: v.literal("setBody"),
     content_id: v.pipe(v.string(), v.nonEmpty()),
@@ -106,22 +119,22 @@ const putBodySchema = v.union([
     type: v.literal("addQuiz"),
     content_id: v.pipe(v.string(), v.nonEmpty()),
     description: v.string(),
-    solution: v.pipe(v.number(), v.integer()),
-    choices: choicesSchema,
+    solution: v.pipe(v.string(), v.decimal(), v.toNumber(), v.integer()),
+    choices: v.pipe(v.string(), v.parseJson(), choicesSchema),
   }),
   v.object({
     type: v.literal("setQuiz"),
     quiz_id: v.pipe(v.string(), v.nonEmpty()),
     description: v.string(),
-    solution: v.pipe(v.number(), v.integer()),
-    choices: choicesSchema,
+    solution: v.pipe(v.string(), v.decimal(), v.toNumber(), v.integer()),
+    choices: v.pipe(v.string(), v.parseJson(), choicesSchema),
   }),
   v.object({
     type: v.literal("reorderQuiz"),
     new_order: v.array(
       v.object({
         quiz_id: v.pipe(v.string(), v.nonEmpty()),
-        order: v.pipe(v.number(), v.integer()),
+        order: v.pipe(v.string(), v.decimal(), v.toNumber(), v.integer()),
       }),
     ),
   }),
@@ -145,7 +158,7 @@ export async function action({
   const formData = Object.fromEntries(await request.formData());
   const bodyRes = v.safeParse(putBodySchema, formData);
   if (!bodyRes.success) {
-    console.log("bad parameter: ", bodyRes.issues);
+    console.log("bad parameter: ", bodyRes.issues[0]);
     return new Response(null, { status: 400 });
   }
   const body = bodyRes.output;
@@ -182,7 +195,7 @@ export async function action({
     case "addQuiz": {
       try {
         const newId = crypto.randomUUID();
-        const [{ orderMax }] = await db
+        const orderMaxRes = await db
           .select({ orderMax: sql<number>`max(${schema.quiz.order}) + 1` })
           .from(schema.quiz)
           .where(eq(schema.quiz.containerId, body.content_id));
@@ -192,7 +205,7 @@ export async function action({
             {
               id: newId,
               containerId: body.content_id,
-              order: orderMax,
+              order: orderMaxRes?.[0]?.orderMax ?? 0,
               description: body.description,
               solution: body.solution,
               choices: JSON.stringify(body.choices),
@@ -347,8 +360,98 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
               </Label>
             </div>
           </fetcher.Form>
+          <div>
+            <Label>クイズリスト</Label>
+            <div>
+              {loaderData.content.quizzes.map(({ id, description, choices, solution }) => (
+                <Card key={id}>
+                  <Card.Header>
+                    <Card.Description>{description}</Card.Description>
+                  </Card.Header>
+                  <Card.Content>
+                    <Label>選択肢リスト</Label>
+                    <RadioGroup
+                      className="grid w-full grid-cols-[8rem_1fr_3rem] items-center gap-2"
+                      defaultValue={`${solution}`}
+                    >
+                      {choices.map((choice, i) => (
+                        <Fragment key={choice}>
+                          <Radio className="mt-0" value={`${i}`}>
+                            <Radio.Content>
+                              これが正解{" "}
+                              <Radio.Control>
+                                <Radio.Indicator />
+                              </Radio.Control>
+                            </Radio.Content>
+                          </Radio>
+                          <Input type="text" placeholder="クイズの選択肢…" defaultValue={choice} />
+                          <Button aria-label="この選択肢を削除する" variant="danger-soft">
+                            <TrashBin />
+                          </Button>
+                        </Fragment>
+                      ))}
+                    </RadioGroup>
+                  </Card.Content>
+                  <Card.Footer>
+                    <Button variant="secondary">選択肢を追加する</Button>
+                    <Button variant="ghost">
+                      <ArrowUp /> 上と入れ替える
+                    </Button>
+                    <Button variant="ghost">
+                      <ArrowDown /> 下と入れ替える
+                    </Button>
+                    <Button variant="danger-soft">
+                      <TrashBin /> このクイズを削除する
+                    </Button>
+                  </Card.Footer>
+                </Card>
+              ))}
+            </div>
+            <AddQuizButton contentId={loaderData.content.id} />
+          </div>
         </div>
       </div>
     </>
+  );
+}
+
+function AddQuizButton({ contentId }: { contentId: string }) {
+  const fetcher = useFetcher({ key: "quizzes" });
+
+  return (
+    <Modal>
+      <Button>クイズを追加</Button>
+      <Modal.Backdrop>
+        <Modal.Container>
+          <Modal.Dialog>
+            <Modal.CloseTrigger />
+            <Modal.Header>
+              <Modal.Heading>新規クイズの情報を入力</Modal.Heading>
+            </Modal.Header>
+            <Modal.Body>
+              <fetcher.Form method="POST" className="flex flex-col gap-4">
+                <input type="hidden" name="type" value="addQuiz" />
+                <input type="hidden" name="content_id" value={contentId} />
+                <input type="hidden" name="solution" value="0" />
+                <input type="hidden" name="choices" value={'[""]'} />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="description">名前</Label>
+                  <Input
+                    id="description"
+                    name="description"
+                    className="min-w-8"
+                    placeholder="問題１：…"
+                    required
+                  />
+                </div>
+                <Button className="self-end" type="submit">
+                  追加する
+                </Button>
+              </fetcher.Form>
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
   );
 }
