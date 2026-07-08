@@ -6,7 +6,6 @@ import { redirect } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { teacher } from "~/db/schema";
 import { UserInfoClient } from "auth0";
-import { eq } from "drizzle-orm";
 
 const getTokenResponseSchema = v.object({
   access_token: v.string(),
@@ -73,22 +72,17 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     }).getUserInfo(access_token);
 
     const db = drizzle(env.e_quiz_db);
-
-    const teacherQuery = await db
-      .select()
-      .from(teacher)
-      .where(eq(teacher.id, user.sub))
-      .limit(1)
+    await db
+      .insert(teacher)
+      .values({
+        id: user.sub,
+        name: user.name,
+      })
+      .onConflictDoUpdate({
+        target: teacher.name,
+        set: { name: user.name },
+      })
       .execute();
-    if (teacherQuery.length === 0) {
-      await db
-        .insert(teacher)
-        .values({
-          id: user.sub,
-          name: user.name,
-        })
-        .execute();
-    }
 
     const headers = new Headers();
     const authStorage = getAuthStorage(env);

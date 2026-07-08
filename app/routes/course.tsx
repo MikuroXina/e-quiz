@@ -3,7 +3,7 @@ import type { Route } from "./+types/course";
 import { Link, redirect, useFetcher } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
-import { content, course, teacher } from "~/db/schema";
+import * as schema from "~/db/schema";
 import { and, eq } from "drizzle-orm";
 import {
   Button,
@@ -41,28 +41,32 @@ export async function loader({
   }
 
   const { env } = context.get(CloudflareContext);
-  const db = drizzle(env.e_quiz_db);
-  const teacherRes = await db.select({ name: teacher.name }).from(teacher).limit(1);
-  const courseRes = await db
-    .select({
-      id: course.id,
-      name: course.name,
-    })
-    .from(course)
-    .where(and(eq(course.id, course_id), eq(course.owner, auth.id)))
-    .limit(1);
-  if (courseRes.length === 0) {
+  const db = drizzle(env.e_quiz_db, { schema });
+  const teacher = await db.query.teacher.findFirst({
+    columns: { name: true },
+    where: (teacher, { eq }) => eq(teacher.id, auth.id),
+  });
+  if (teacher == null) {
+    return redirect(`/log_in?back=/courses/${course_id}`);
+  }
+  const course = await db.query.course.findFirst({
+    where: (course, { eq, and }) => and(eq(course.id, course_id), eq(course.ownerId, auth.id)),
+  });
+  if (course == null) {
     return new Response(null, {
       status: 404,
     });
   }
 
-  const contents = await db
-    .select({ id: content.id, title: content.title })
-    .from(content)
-    .where(eq(content.container, courseRes[0].id));
+  const contents = await db.query.content.findMany({
+    columns: {
+      id: true,
+      title: true,
+    },
+    where: (content, { eq }) => eq(content.containerId, course.id),
+  });
 
-  return { userName: teacherRes[0].name, course: courseRes[0], contents };
+  return { userName: teacher.name, course, contents };
 }
 
 const postContentSchema = v.object({
@@ -94,9 +98,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     const db = drizzle(env.e_quiz_db);
     try {
       await db
-        .update(content)
+        .update(schema.content)
         .set({ title: body.content_title })
-        .where(eq(content.id, body.content_id))
+        .where(eq(schema.content.id, body.content_id))
         .execute();
       return { success: true };
     } catch (err: unknown) {
@@ -117,10 +121,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   const newId = crypto.randomUUID();
   try {
     await db
-      .insert(content)
+      .insert(schema.content)
       .values({
         id: newId,
-        container: body.container,
+        containerId: body.container,
         title: body.name,
         content: "",
       })

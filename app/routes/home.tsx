@@ -15,7 +15,7 @@ import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
-import { course, teacher } from "~/db/schema";
+import * as schema from "~/db/schema";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
@@ -37,25 +37,24 @@ export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData>
   if (auth.type === "unauthorized") {
     return { type: "unauthorized" };
   }
-  const db = drizzle(env.e_quiz_db);
-  const res = await db
-    .select({ name: teacher.name })
-    .from(teacher)
-    .where(eq(teacher.id, auth.id))
-    .limit(1);
-  if (res.length === 0) {
+  const db = drizzle(env.e_quiz_db, { schema });
+  const teacher = await db.query.teacher.findFirst({
+    columns: { name: true },
+    with: {
+      courses: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    where: (teacher, { eq }) => eq(teacher.id, auth.id),
+  });
+  if (teacher == null) {
     return { type: "unauthorized" };
   }
 
-  const courses = await db
-    .select({
-      id: course.id,
-      name: course.name,
-    })
-    .from(course)
-    .where(eq(course.owner, auth.id));
-
-  return { type: "teacher", name: res[0].name, courses };
+  return { type: "teacher", ...teacher };
 }
 
 const postCourseSchema = v.object({
@@ -86,11 +85,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     const db = drizzle(env.e_quiz_db);
     try {
       await db
-        .update(course)
+        .update(schema.course)
         .set({
           name: body.course_name,
         })
-        .where(eq(course.id, body.course_id))
+        .where(eq(schema.course.id, body.course_id))
         .execute();
       return { success: true };
     } catch (err: unknown) {
@@ -111,11 +110,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const newId = crypto.randomUUID();
   try {
     await db
-      .insert(course)
+      .insert(schema.course)
       .values({
         id: newId,
         name: body.name,
-        owner: auth.id,
+        ownerId: auth.id,
       })
       .execute();
     return { success: true };
