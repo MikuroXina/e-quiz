@@ -1,6 +1,7 @@
 import { CloudflareContext } from "~/lib/cloudflare";
 import type { Route } from "./+types/content";
 import {
+  AlertDialog,
   Button,
   Card,
   Input,
@@ -13,7 +14,7 @@ import {
 } from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
-import { redirect, useFetcher } from "react-router";
+import { Form, redirect, useFetcher } from "react-router";
 import * as schema from "~/db/schema";
 import { eq, inArray, SQL, sql } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
@@ -287,7 +288,6 @@ export async function action({
         .innerJoin(schema.content, eq(schema.quiz.containerId, schema.content.id))
         .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
         .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
-        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
         .where(eq(schema.quiz.id, body.quiz_id))
         .limit(1);
       if (target.length === 0) {
@@ -426,9 +426,32 @@ function QuizzesList({ quizzes }: { quizzes: readonly Quiz[] }) {
             <Button variant="ghost">
               <ArrowDown /> 下と入れ替える
             </Button>
-            <Button variant="danger-soft">
-              <TrashBin /> このクイズを削除する
-            </Button>
+            <AlertDialog>
+              <Button variant="danger-soft">
+                <TrashBin /> このクイズを削除する
+              </Button>
+              <AlertDialog.Backdrop>
+                <AlertDialog.Container>
+                  <AlertDialog.Dialog>
+                    <AlertDialog.CloseTrigger />
+                    <AlertDialog>このクイズ全体を削除しますか？</AlertDialog>
+                    <AlertDialog.Body>入力した選択肢は失われます。</AlertDialog.Body>
+                    <AlertDialog.Footer>
+                      <Button slot="close" variant="tertiary">
+                        キャンセル
+                      </Button>
+                      <Form method="POST">
+                        <input type="hidden" name="type" value="removeQuiz" />
+                        <input type="hidden" name="quiz_id" value={id} />
+                        <Button type="submit" slot="close" variant="danger">
+                          クイズを削除する
+                        </Button>
+                      </Form>
+                    </AlertDialog.Footer>
+                  </AlertDialog.Dialog>
+                </AlertDialog.Container>
+              </AlertDialog.Backdrop>
+            </AlertDialog>
           </Card.Footer>
         </Card>
       ))}
@@ -456,7 +479,7 @@ function AddQuizButton({ contentId }: { contentId: string }) {
                 <input type="hidden" name="solution" value="0" />
                 <input type="hidden" name="choices" value={'[""]'} />
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="description">名前</Label>
+                  <Label htmlFor="description">説明文</Label>
                   <Input
                     id="description"
                     name="description"
