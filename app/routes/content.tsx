@@ -4,9 +4,8 @@ import { Button, Label, Surface, TextArea } from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
 import { redirect, useFetcher } from "react-router";
-import { content, course } from "~/db/schema";
 import * as schema from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, max, SQL, sql } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
 import { useEffect, useState } from "react";
@@ -57,15 +56,15 @@ export async function loader({
 
   const contentRes = await db
     .select({
-      courseId: course.id,
-      courseName: course.name,
-      contentId: content.id,
-      contentTitle: content.title,
-      contentBody: content.content,
+      courseId: schema.course.id,
+      courseName: schema.course.name,
+      contentId: schema.content.id,
+      contentTitle: schema.content.title,
+      contentBody: schema.content.content,
     })
-    .from(content)
-    .innerJoin(course, eq(content.containerId, course.id))
-    .where(eq(course.ownerId, auth.id))
+    .from(schema.content)
+    .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+    .where(eq(schema.course.ownerId, auth.id))
     .limit(1);
 
   if (contentRes.length === 0) {
@@ -97,10 +96,40 @@ export async function loader({
   };
 }
 
-const putBodySchema = v.object({
-  content_id: v.pipe(v.string(), v.nonEmpty()),
-  content_body: v.string(),
-});
+const putBodySchema = v.union([
+  v.object({
+    type: v.literal("setBody"),
+    content_id: v.pipe(v.string(), v.nonEmpty()),
+    content_body: v.string(),
+  }),
+  v.object({
+    type: v.literal("addQuiz"),
+    content_id: v.pipe(v.string(), v.nonEmpty()),
+    description: v.string(),
+    solution: v.pipe(v.number(), v.integer()),
+    choices: choicesSchema,
+  }),
+  v.object({
+    type: v.literal("setQuiz"),
+    quiz_id: v.pipe(v.string(), v.nonEmpty()),
+    description: v.string(),
+    solution: v.pipe(v.number(), v.integer()),
+    choices: choicesSchema,
+  }),
+  v.object({
+    type: v.literal("reorderQuiz"),
+    new_order: v.array(
+      v.object({
+        quiz_id: v.pipe(v.string(), v.nonEmpty()),
+        order: v.pipe(v.number(), v.integer()),
+      }),
+    ),
+  }),
+  v.object({
+    type: v.literal("removeQuiz"),
+    quiz_id: v.pipe(v.string(), v.nonEmpty()),
+  }),
+]);
 
 type ActionResponse = { success: true };
 
@@ -123,18 +152,142 @@ export async function action({
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  try {
-    await db
-      .update(content)
-      .set({
-        content: body.content_body,
-      })
-      .where(eq(content.id, body.content_id))
-      .execute();
-    return { success: true };
-  } catch (err: unknown) {
-    console.log("failed to update body of the content: ", err);
-    return new Response(null, { status: 500 });
+  switch (body.type) {
+    case "setBody": {
+      const target = await db
+        .select({ id: schema.content.id })
+        .from(schema.content)
+        .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
+        .where(eq(schema.content.id, body.content_id))
+        .limit(1);
+      if (target.length === 0) {
+        console.log("target is not created by the authorized user: ", auth);
+        return new Response(null, { status: 400 });
+      }
+      try {
+        await db
+          .update(schema.content)
+          .set({
+            content: body.content_body,
+          })
+          .where(eq(schema.content.id, body.content_id))
+          .execute();
+        return { success: true };
+      } catch (err: unknown) {
+        console.log("failed to update body of the content: ", err);
+        return new Response(null, { status: 500 });
+      }
+    }
+    case "addQuiz": {
+      try {
+        const newId = crypto.randomUUID();
+        const [{ orderMax }] = await db
+          .select({ orderMax: sql<number>`max(${schema.quiz.order}) + 1` })
+          .from(schema.quiz)
+          .where(eq(schema.quiz.containerId, body.content_id));
+        await db
+          .insert(schema.quiz)
+          .values([
+            {
+              id: newId,
+              containerId: body.content_id,
+              order: orderMax,
+              description: body.description,
+              solution: body.solution,
+              choices: JSON.stringify(body.choices),
+            },
+          ])
+          .execute();
+        return { success: true };
+      } catch (err: unknown) {
+        console.log("failed to add a new quiz: ", err);
+        return new Response(null, { status: 500 });
+      }
+    }
+    case "setQuiz": {
+      const target = await db
+        .select({ id: schema.quiz.id })
+        .from(schema.quiz)
+        .innerJoin(schema.content, eq(schema.quiz.containerId, schema.content.id))
+        .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
+        .where(eq(schema.quiz.id, body.quiz_id))
+        .limit(1);
+      if (target.length === 0) {
+        console.log("target is not created by the authorized user: ", auth);
+        return new Response(null, { status: 400 });
+      }
+      try {
+        await db
+          .update(schema.quiz)
+          .set({
+            description: body.description,
+            solution: body.solution,
+            choices: JSON.stringify(body.choices),
+          })
+          .where(eq(schema.quiz, body.quiz_id))
+          .execute();
+        return { success: true };
+      } catch (err: unknown) {
+        console.log("failed to update the quiz: ", err);
+        return new Response(null, { status: 500 });
+      }
+    }
+    case "reorderQuiz": {
+      const ids: readonly string[] = body.new_order.map(({ quiz_id }) => quiz_id);
+      const targets = await db
+        .select({ id: schema.quiz.id })
+        .from(schema.quiz)
+        .innerJoin(schema.content, eq(schema.quiz.containerId, schema.content.id))
+        .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, schema.teacher.id))
+        .where(inArray(schema.quiz.id, ids));
+      if (targets.length !== body.new_order.length) {
+        console.log("target is not created by the authorized user: ", auth);
+        return new Response(null, { status: 400 });
+      }
+      try {
+        const sqlChunks: SQL[] = [sql`(case`];
+        for (const { quiz_id, order } of body.new_order) {
+          sqlChunks.push(sql`when ${schema.quiz.id} = ${quiz_id} then ${order}`);
+        }
+        sqlChunks.push(sql`end)`);
+        const concatenated = sql.join(sqlChunks, sql.raw(" "));
+        await db
+          .update(schema.quiz)
+          .set({ order: concatenated })
+          .where(inArray(schema.quiz.id, ids))
+          .execute();
+        return { success: true };
+      } catch (err: unknown) {
+        console.log("failed to update the quiz: ", err);
+        return new Response(null, { status: 500 });
+      }
+    }
+    case "removeQuiz": {
+      const target = await db
+        .select({ id: schema.quiz.id })
+        .from(schema.quiz)
+        .innerJoin(schema.content, eq(schema.quiz.containerId, schema.content.id))
+        .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
+        .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
+        .where(eq(schema.quiz.id, body.quiz_id))
+        .limit(1);
+      if (target.length === 0) {
+        console.log("target is not created by the authorized user: ", auth);
+        return new Response(null, { status: 400 });
+      }
+      try {
+        await db.delete(schema.quiz).where(eq(schema.quiz.id, body.quiz_id)).execute();
+        return { success: true };
+      } catch (err: unknown) {
+        console.log("failed to delete the quiz: ", err);
+        return new Response(null, { status: 500 });
+      }
+    }
   }
 }
 
@@ -160,7 +313,7 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
           />
         </Surface>
         <div className="h-full p-4">
-          <fetcher.Form method="PUT" onSubmit={() => setIsSaved(true)}>
+          <fetcher.Form method="POST" onSubmit={() => setIsSaved(true)}>
             <input type="hidden" name="content_id" value={loaderData.content.id} />
             <div className="mb-2">
               <Button type="submit" isDisabled={isSaved}>
