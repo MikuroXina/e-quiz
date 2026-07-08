@@ -361,7 +361,7 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
             </div>
           </fetcher.Form>
           <div>
-            <Label>クイズリスト</Label>
+            <p>クイズリスト</p>
             <div>
               {loaderData.content.quizzes.map(({ id, description, choices, solution }) => (
                 <Card key={id}>
@@ -369,27 +369,30 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
                     <Card.Description>{description}</Card.Description>
                   </Card.Header>
                   <Card.Content>
-                    <Label>選択肢リスト</Label>
-                    <RadioGroup
-                      className="grid w-full grid-cols-[8rem_1fr_3rem] items-center gap-2"
-                      defaultValue={`${solution}`}
-                    >
-                      {choices.map((choice, i) => (
-                        <Fragment key={choice}>
-                          <Radio className="mt-0" value={`${i}`}>
-                            <Radio.Content>
-                              これが正解{" "}
-                              <Radio.Control>
-                                <Radio.Indicator />
-                              </Radio.Control>
-                            </Radio.Content>
-                          </Radio>
-                          <Input type="text" placeholder="クイズの選択肢…" defaultValue={choice} />
-                          <Button aria-label="この選択肢を削除する" variant="danger-soft">
-                            <TrashBin />
-                          </Button>
-                        </Fragment>
-                      ))}
+                    <RadioGroup defaultValue={`${solution}`}>
+                      <Label>選択肢リスト</Label>
+                      <div className="grid w-full grid-cols-[8rem_1fr_3rem] items-center gap-2">
+                        {choices.map((choice, i) => (
+                          <Fragment key={choice}>
+                            <Radio className="mt-0" value={`${i}`}>
+                              <Radio.Content>
+                                これが正解{" "}
+                                <Radio.Control>
+                                  <Radio.Indicator />
+                                </Radio.Control>
+                              </Radio.Content>
+                            </Radio>
+                            <Input
+                              type="text"
+                              placeholder="クイズの選択肢…"
+                              defaultValue={choice}
+                            />
+                            <Button aria-label="この選択肢を削除する" variant="danger-soft">
+                              <TrashBin />
+                            </Button>
+                          </Fragment>
+                        ))}
+                      </div>
                     </RadioGroup>
                   </Card.Content>
                   <Card.Footer>
