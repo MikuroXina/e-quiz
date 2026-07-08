@@ -79,7 +79,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         name: user.name,
       })
       .onConflictDoUpdate({
-        target: teacher.name,
+        target: teacher.id,
         set: { name: user.name },
       })
       .execute();
