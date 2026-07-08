@@ -95,7 +95,18 @@ export async function action({ request, context }: Route.ActionArgs) {
     const body = bodyRes.output;
 
     const { env } = context.get(CloudflareContext);
-    const db = drizzle(env.e_quiz_db);
+    const db = drizzle(env.e_quiz_db, { schema });
+    const target = await db
+      .select({ id: schema.content.id })
+      .from(schema.content)
+      .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
+      .innerJoin(schema.teacher, eq(schema.course.ownerId, schema.teacher.id))
+      .where(and(eq(schema.content.id, body.content_id), eq(schema.teacher.id, auth.id)))
+      .limit(1);
+    if (target.length === 0) {
+      console.log("target is not created by the authorized user: ", auth);
+      return new Response(null, { status: 400 });
+    }
     try {
       await db
         .update(schema.content)
