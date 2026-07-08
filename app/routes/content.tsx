@@ -22,6 +22,7 @@ import { Fragment, useEffect, useState } from "react";
 import TrashBin from "@gravity-ui/icons/TrashBin";
 import ArrowUp from "@gravity-ui/icons/ArrowUp";
 import ArrowDown from "@gravity-ui/icons/ArrowDown";
+import Plus from "@gravity-ui/icons/Plus";
 
 const choicesSchema = v.array(v.string());
 
@@ -360,61 +361,78 @@ export default function Content({ loaderData }: Route.ComponentProps): React.JSX
               </Label>
             </div>
           </fetcher.Form>
-          <div>
+          <div className="flex flex-col gap-2">
             <p>クイズリスト</p>
-            <div>
-              {loaderData.content.quizzes.map(({ id, description, choices, solution }) => (
-                <Card key={id}>
-                  <Card.Header>
-                    <Card.Description>{description}</Card.Description>
-                  </Card.Header>
-                  <Card.Content>
-                    <RadioGroup defaultValue={`${solution}`}>
-                      <Label>選択肢リスト</Label>
-                      <div className="grid w-full grid-cols-[8rem_1fr_3rem] items-center gap-2">
-                        {choices.map((choice, i) => (
-                          <Fragment key={choice}>
-                            <Radio className="mt-0" value={`${i}`}>
-                              <Radio.Content>
-                                これが正解{" "}
-                                <Radio.Control>
-                                  <Radio.Indicator />
-                                </Radio.Control>
-                              </Radio.Content>
-                            </Radio>
-                            <Input
-                              type="text"
-                              placeholder="クイズの選択肢…"
-                              defaultValue={choice}
-                            />
-                            <Button aria-label="この選択肢を削除する" variant="danger-soft">
-                              <TrashBin />
-                            </Button>
-                          </Fragment>
-                        ))}
-                      </div>
-                    </RadioGroup>
-                  </Card.Content>
-                  <Card.Footer>
-                    <Button variant="secondary">選択肢を追加する</Button>
-                    <Button variant="ghost">
-                      <ArrowUp /> 上と入れ替える
-                    </Button>
-                    <Button variant="ghost">
-                      <ArrowDown /> 下と入れ替える
-                    </Button>
-                    <Button variant="danger-soft">
-                      <TrashBin /> このクイズを削除する
-                    </Button>
-                  </Card.Footer>
-                </Card>
-              ))}
-            </div>
+            <QuizzesList quizzes={loaderData.content.quizzes} />
             <AddQuizButton contentId={loaderData.content.id} />
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+function QuizzesList({ quizzes }: { quizzes: readonly Quiz[] }) {
+  const fetcher = useFetcher({ key: "quizzes" });
+
+  return (
+    <div>
+      {quizzes.map(({ id, description, choices, solution }) => (
+        <Card key={id}>
+          <Card.Header>
+            <Card.Description>
+              <Label>
+                クイズの説明文
+                <TextArea
+                  className="outline outline-gray-200 outline-solid"
+                  fullWidth
+                  placeholder="問題１:…"
+                  defaultValue={description}
+                  cols={2}
+                />
+              </Label>
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
+            <RadioGroup defaultValue={`${solution}`}>
+              <Label>選択肢リスト</Label>
+              <div className="grid w-full grid-cols-[8rem_1fr_3rem] items-center gap-2">
+                {choices.map((choice, i) => (
+                  <Fragment key={choice}>
+                    <Radio className="mt-0" value={`${i}`}>
+                      <Radio.Content>
+                        これが正解{" "}
+                        <Radio.Control>
+                          <Radio.Indicator />
+                        </Radio.Control>
+                      </Radio.Content>
+                    </Radio>
+                    <Input type="text" placeholder="クイズの選択肢…" defaultValue={choice} />
+                    <Button aria-label="この選択肢を削除する" variant="danger-soft">
+                      <TrashBin />
+                    </Button>
+                  </Fragment>
+                ))}
+              </div>
+            </RadioGroup>
+          </Card.Content>
+          <Card.Footer>
+            <Button variant="secondary">
+              <Plus /> 選択肢を追加する
+            </Button>
+            <Button variant="ghost">
+              <ArrowUp /> 上と入れ替える
+            </Button>
+            <Button variant="ghost">
+              <ArrowDown /> 下と入れ替える
+            </Button>
+            <Button variant="danger-soft">
+              <TrashBin /> このクイズを削除する
+            </Button>
+          </Card.Footer>
+        </Card>
+      ))}
+    </div>
   );
 }
 
