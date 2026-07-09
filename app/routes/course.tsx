@@ -241,11 +241,11 @@ export default function Course({
                           </Select.Trigger>
                           <Select.Popover>
                             <ListBox>
-                              <ListBox.Item id="unpublished" textValue="UNPUBLISHED">
+                              <ListBox.Item id="UNPUBLISHED" textValue="UNPUBLISHED">
                                 非公開
                                 <ListBox.ItemIndicator />
                               </ListBox.Item>
-                              <ListBox.Item id="published" textValue="PUBLISHED">
+                              <ListBox.Item id="PUBLISHED" textValue="PUBLISHED">
                                 公開済み
                                 <ListBox.ItemIndicator />
                               </ListBox.Item>
