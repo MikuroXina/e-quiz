@@ -67,6 +67,9 @@ export async function loader({
     where: (quizzes, { eq }) => eq(quizzes.containerId, contentRes[0].contentId),
     orderBy: (quizzes, { asc }) => asc(quizzes.order),
   });
+  const publishStateRes = await db.query.publishState.findFirst({
+    where: (publishState, { eq }) => eq(publishState.content_id, contentRes[0].contentId),
+  });
 
   const previewHtml = sanitize(await marked(contentRes[0].contentBody));
 
@@ -86,6 +89,9 @@ export async function loader({
         solution,
         choices: v.parse(choicesSchema, JSON.parse(choices)),
       })),
+      publishState: publishStateRes
+        ? { type: "PUBLISHED", publishedAt: publishStateRes.updatedAt }
+        : { type: "UNPUBLISHED" },
     },
     previewHtml,
   };
@@ -124,7 +130,22 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data({ success: false }, { status: 400 });
   }
   try {
+    const updatedAt = body.new_content.publishState?.publishedAt ?? new Date().toISOString();
     await db.batch([
+      db
+        .insert(schema.publishState)
+        .values({
+          content_id: body.new_content.id,
+          state: body.new_content.publishState.type,
+          updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: schema.publishState.content_id,
+          set: {
+            state: body.new_content.publishState.type,
+            updatedAt,
+          },
+        }),
       db
         .update(schema.content)
         .set({

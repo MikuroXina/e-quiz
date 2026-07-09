@@ -81,7 +81,7 @@ export async function loader({
       ...content,
       publishState:
         content.publishState?.state === "PUBLISHED"
-          ? { type: "PUBLISHED", publishedAt: new Date(content.publishState.updatedAt) }
+          ? { type: "PUBLISHED", publishedAt: content.publishState.updatedAt }
           : { type: "UNPUBLISHED" },
     })),
   };
@@ -197,14 +197,12 @@ export default function Course({
   loaderData: { userName, course, contents },
 }: Route.ComponentProps): React.JSX.Element {
   const submit = useSubmit();
-  const onChangePublishState = (contentId: string) => (value: PropertyKey | null) => {
-    if (typeof value === "string" && ["PUBLISHED", "UNPUBLISHED"].includes(value)) {
-      const formData = new FormData();
-      formData.append("type", "SET_PUBLISH_STATE");
-      formData.append("content_id", contentId);
-      formData.append("state", value);
-      submit(formData, { method: "PUT" });
-    }
+  const onChangePublishState = (contentId: string) => (value: PublishState["type"]) => {
+    const formData = new FormData();
+    formData.append("type", "SET_PUBLISH_STATE");
+    formData.append("content_id", contentId);
+    formData.append("state", value);
+    submit(formData, { method: "PUT" });
   };
 
   return (

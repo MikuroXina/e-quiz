@@ -19,11 +19,12 @@ import TrashBin from "@gravity-ui/icons/TrashBin";
 import ArrowUp from "@gravity-ui/icons/ArrowUp";
 import ArrowDown from "@gravity-ui/icons/ArrowDown";
 import Plus from "@gravity-ui/icons/Plus";
-import type { Content, Quiz } from "~/lib/content";
+import type { Content, PublishState, Quiz } from "~/lib/content";
 import { debounce } from "~/lib/debounce";
 import FloppyDisk from "@gravity-ui/icons/FloppyDisk";
 import type { Brand } from "valibot";
 import { produce } from "immer";
+import { PublishStateSelector } from "./publish-state-selector";
 
 type SaveState =
   | { type: "pending" }
@@ -40,6 +41,7 @@ type Action =
   | { type: "SAVE_START" }
   | { type: "SAVE_ERROR" }
   | { type: "SAVE_DONE" }
+  | { type: "SET_PUBLISH_STATE"; newPublishState: PublishState["type"] }
   | {
       type: "EDIT_BODY";
       newBody: string;
@@ -89,6 +91,12 @@ const reduce: (state: State, action: Action) => State = produce((state, action) 
       state.save.type = "unsaved";
   }
   switch (action.type) {
+    case "SET_PUBLISH_STATE":
+      state.content.publishState.type = action.newPublishState;
+      if (state.content.publishState.type === "PUBLISHED") {
+        state.content.publishState.publishedAt = new Date().toISOString();
+      }
+      break;
     case "EDIT_BODY":
       state.content.body = action.newBody;
       break;
@@ -175,12 +183,25 @@ export function ContentEditor({
 
   return (
     <>
-      <div className="mb-2 flex items-center gap-2">
-        <Button onClick={save} isDisabled={!saveError && state.save.type === "pending"}>
-          {state.save.type === "saving" ? <Spinner color="current" size="sm" /> : <FloppyDisk />}
-          保存
-        </Button>
-        {saveError && <ErrorMessage>保存に失敗しました</ErrorMessage>}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button onClick={save} isDisabled={!saveError && state.save.type === "pending"}>
+            {state.save.type === "saving" ? <Spinner color="current" size="sm" /> : <FloppyDisk />}
+            保存
+          </Button>
+          {saveError && <ErrorMessage>保存に失敗しました</ErrorMessage>}
+        </div>
+        <div>
+          <Label className="flex flex-row items-center gap-2">
+            公開設定
+            <PublishStateSelector
+              publishState={state.content.publishState}
+              onChange={(newPublishState) =>
+                dispatch({ type: "SET_PUBLISH_STATE", newPublishState })
+              }
+            />
+          </Label>
+        </div>
       </div>
       <div>
         <Tabs>

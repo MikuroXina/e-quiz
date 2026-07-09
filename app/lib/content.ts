@@ -8,15 +8,10 @@ export const quizSchema = v.object({
 });
 export type Quiz = v.InferOutput<typeof quizSchema>;
 
-export const publishStateSchema = v.variant("type", [
-  v.object({
-    type: v.literal("UNPUBLISHED"),
-  }),
-  v.object({
-    type: v.literal("PUBLISHED"),
-    publishedAt: v.date(),
-  }),
-]);
+export const publishStateSchema = v.object({
+  type: v.union([v.literal("UNPUBLISHED"), v.literal("PUBLISHED")]),
+  publishedAt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+});
 export type PublishState = v.InferOutput<typeof publishStateSchema>;
 
 export const contentSchema = v.object({

@@ -3,15 +3,26 @@ import type { PublishState } from "~/lib/content";
 
 export interface PublishStateSelectorProps {
   publishState: PublishState;
-  onChange: (value: PropertyKey | null) => void;
+  onChange: (value: PublishState["type"]) => void;
 }
+
+const isKindOfState = (key: unknown): key is PublishState["type"] =>
+  typeof key === "string" && ["PUBLISHED", "UNPUBLISHED"].includes(key);
 
 export function PublishStateSelector({
   publishState,
   onChange,
 }: PublishStateSelectorProps): React.JSX.Element {
   return (
-    <Select className="w-32" defaultValue={publishState.type} onChange={onChange}>
+    <Select
+      className="w-32"
+      defaultValue={publishState.type}
+      onChange={(key) => {
+        if (isKindOfState(key)) {
+          onChange(key);
+        }
+      }}
+    >
       <Select.Trigger>
         <Select.Value />
         <Select.Indicator />
