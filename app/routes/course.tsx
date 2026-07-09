@@ -202,7 +202,7 @@ export default function Course({
       formData.append("type", "SET_PUBLISH_STATE");
       formData.append("content_id", contentId);
       formData.append("state", value);
-      submit(formData);
+      submit(formData, { method: "PUT" });
     }
   };
 
