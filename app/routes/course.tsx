@@ -22,6 +22,7 @@ import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
 import type { PublishState } from "~/lib/content";
+import { PublishStateSelector } from "~/organisms/publish-state-selector";
 
 interface Content {
   id: string;
@@ -230,28 +231,10 @@ export default function Course({
                         <Typography type="h3">{title}</Typography>
                       </Link>
                       <div className="flex items-center gap-2">
-                        <Select
-                          className="w-32"
-                          defaultValue={publishState.type}
+                        <PublishStateSelector
+                          publishState={publishState}
                           onChange={onChangePublishState(id)}
-                        >
-                          <Select.Trigger>
-                            <Select.Value />
-                            <Select.Indicator />
-                          </Select.Trigger>
-                          <Select.Popover>
-                            <ListBox>
-                              <ListBox.Item id="UNPUBLISHED" textValue="UNPUBLISHED">
-                                非公開
-                                <ListBox.ItemIndicator />
-                              </ListBox.Item>
-                              <ListBox.Item id="PUBLISHED" textValue="PUBLISHED">
-                                公開済み
-                                <ListBox.ItemIndicator />
-                              </ListBox.Item>
-                            </ListBox>
-                          </Select.Popover>
-                        </Select>
+                        />
                         <EditContentTitleButton contentId={id} oldTitle={title} />
                         <Link to={`/courses/${course.id}/contents/${id}`}>
                           <Button variant="ghost">開く</Button>
