@@ -3,7 +3,7 @@ import type { Route } from "./+types/content";
 import { Surface } from "@heroui/react";
 import { drizzle } from "drizzle-orm/d1";
 import { AuthContext } from "~/lib/session";
-import { redirect, useSubmit } from "react-router";
+import { data, redirect, useSubmit } from "react-router";
 import * as schema from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
@@ -90,22 +90,17 @@ const submitSchema = v.object({
   new_content: contentSchema,
 });
 
-type ActionResponse = { success: true };
-
-export async function action({
-  request,
-  context,
-}: Route.ActionArgs): Promise<Response | ActionResponse> {
+export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
   if (auth.type === "unauthorized") {
-    return new Response(null, { status: 403 });
+    return data({ success: false }, { status: 403 });
   }
 
   const formData = Object.fromEntries(await request.formData());
   const bodyRes = v.safeParse(submitSchema, formData);
   if (!bodyRes.success) {
     console.log("bad parameter: ", bodyRes.issues[0]);
-    return new Response(null, { status: 400 });
+    return data({ success: false }, { status: 400 });
   }
   const body = bodyRes.output;
 
@@ -120,7 +115,7 @@ export async function action({
     .limit(1);
   if (target.length === 0) {
     console.log("target is not created by the authorized user: ", auth);
-    return new Response(null, { status: 400 });
+    return data({ success: false }, { status: 400 });
   }
   try {
     await db.transaction(async (tx) => {
@@ -147,11 +142,14 @@ export async function action({
     return { success: true };
   } catch (err: unknown) {
     console.log("failed to update body of the content: ", err);
-    return new Response(null, { status: 500 });
+    return data({ success: false }, { status: 500 });
   }
 }
 
-export default function ContentPage({ loaderData }: Route.ComponentProps): React.JSX.Element {
+export default function ContentPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps): React.JSX.Element {
   const submit = useSubmit();
   const save = async (newContent: Content) => {
     const data = new FormData();
@@ -172,7 +170,11 @@ export default function ContentPage({ loaderData }: Route.ComponentProps): React
           />
         </Surface>
         <div className="h-full p-4">
-          <ContentEditor content={loaderData.content} onSave={save} />
+          <ContentEditor
+            content={loaderData.content}
+            saveError={!actionData?.success}
+            onSave={save}
+          />
         </div>
       </div>
     </>

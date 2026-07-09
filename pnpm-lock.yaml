@@ -26,6 +26,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)
+      immer:
+        specifier: ^11.1.11
+        version: 11.1.11
       isbot:
         specifier: ^5.1.36
         version: 5.1.44
@@ -2351,6 +2354,9 @@ packages:
   iconv-lite@0.7.2:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
     engines: {node: '>=0.10.0'}
+
+  immer@11.1.11:
+    resolution: {integrity: sha512-qzXuyXAkPySAGYkfsAwodDPWT8Zm7/Uo5BNt4BjhMhG5WlWyZZ4wQqnWwdS8kjlQ1Cwu6gjw3A6+0gTQwlyYtw==}
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -4872,6 +4878,8 @@ snapshots:
   iconv-lite@0.7.2:
     dependencies:
       safer-buffer: 2.1.2
+
+  immer@11.1.11: {}
 
   inherits@2.0.4: {}
 
