@@ -170,7 +170,9 @@ export default function Course({
                 <Card key={id}>
                   <Card.Content>
                     <div className="flex justify-between">
-                      <Typography type="h3">{title}</Typography>
+                      <Link to={`/courses/${course.id}/contents/${id}`}>
+                        <Typography type="h3">{title}</Typography>
+                      </Link>
                       <div className="flex items-center gap-2">
                         <EditContentTitleButton contentId={id} oldTitle={title} />
                         <Link to={`/courses/${course.id}/contents/${id}`}>
