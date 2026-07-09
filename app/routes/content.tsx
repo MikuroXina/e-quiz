@@ -118,16 +118,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data({ success: false }, { status: 400 });
   }
   try {
-    await db.transaction(async (tx) => {
-      await tx
+    await db.batch([
+      db
         .update(schema.content)
         .set({
           content: body.new_content.body,
         })
-        .where(eq(schema.content.id, body.new_content.id))
-        .execute();
-      for (const [i, quiz] of body.new_content.quizzes.entries()) {
-        await tx
+        .where(eq(schema.content.id, body.new_content.id)),
+      ...body.new_content.quizzes.map((quiz, i) =>
+        db
           .update(schema.quiz)
           .set({
             order: i,
@@ -135,10 +134,9 @@ export async function action({ request, context }: Route.ActionArgs) {
             solution: quiz.solution,
             choices: JSON.stringify(quiz.choices),
           })
-          .where(eq(schema.quiz.id, quiz.id))
-          .execute();
-      }
-    });
+          .where(eq(schema.quiz.id, quiz.id)),
+      ),
+    ]);
     return { success: true };
   } catch (err: unknown) {
     console.log("failed to update body of the content: ", err);
