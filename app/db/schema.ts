@@ -41,6 +41,20 @@ export const contentRelations = relations(content, ({ one, many }) => ({
   quizzes: many(quiz),
 }));
 
+export const publishState = sqliteTable("publish_state", {
+  content_id: text()
+    .primaryKey()
+    .references(() => content.id),
+  state: text().notNull().default("UNPUBLISHED"),
+  updatedAt: text().notNull(),
+});
+export const publishStateRelations = relations(publishState, ({ one }) => ({
+  content: one(content, {
+    fields: [publishState.content_id],
+    references: [content.id],
+  }),
+}));
+
 export const quiz = sqliteTable(
   "quiz",
   {
