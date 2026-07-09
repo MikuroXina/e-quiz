@@ -87,7 +87,7 @@ export async function loader({
 
 const submitSchema = v.object({
   course_id: v.string(),
-  new_content: contentSchema,
+  new_content: v.pipe(v.string(), v.parseJson(), contentSchema),
 });
 
 export async function action({ request, context }: Route.ActionArgs) {
