@@ -7,12 +7,14 @@ import {
   Label,
   Radio,
   RadioGroup,
+  ScrollShadow,
   Spinner,
+  Tabs,
   TextArea,
   Tooltip,
 } from "@heroui/react";
 import { Form } from "react-router";
-import { Fragment, useEffect, useReducer, type Dispatch } from "react";
+import { Fragment, useEffect, useReducer, useState, type Dispatch } from "react";
 import TrashBin from "@gravity-ui/icons/TrashBin";
 import ArrowUp from "@gravity-ui/icons/ArrowUp";
 import ArrowDown from "@gravity-ui/icons/ArrowDown";
@@ -135,11 +137,17 @@ const reduce: (state: State, action: Action) => State = produce((state, action) 
 
 export interface ContentEditorProps {
   content: Content;
+  previewHtml: string;
   saveError: boolean;
   onSave: (newContent: Content) => Promise<{ success: true }>;
 }
 
-export function ContentEditor({ content: defaultContent, saveError, onSave }: ContentEditorProps) {
+export function ContentEditor({
+  content: defaultContent,
+  previewHtml,
+  saveError,
+  onSave,
+}: ContentEditorProps) {
   const [state, dispatch] = useReducer(reduce, {
     content: defaultContent,
     save: { type: "pending" },
@@ -175,20 +183,41 @@ export function ContentEditor({ content: defaultContent, saveError, onSave }: Co
         {saveError && <ErrorMessage>保存に失敗しました</ErrorMessage>}
       </div>
       <div>
-        <Label>
-          本文
-          <TextArea
-            className="outline outline-gray-200 outline-solid"
-            name="content_body"
-            placeholder={"# 見出し 1\n…"}
-            onChange={debounce((event) =>
-              dispatch({ type: "EDIT_BODY", newBody: event.target.value }),
-            )}
-            defaultValue={state.content.body}
-            rows={16}
-            fullWidth
-          />
-        </Label>
+        <Tabs>
+          <Tabs.ListContainer>
+            <Tabs.List>
+              <Tabs.Tab id="edit">
+                編集
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="preview">
+                プレビュー
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+          <Tabs.Panel id="edit">
+            <Label>
+              本文
+              <TextArea
+                className="outline outline-gray-200 outline-solid"
+                name="content_body"
+                placeholder={"# 見出し 1\n…"}
+                onChange={debounce((event) =>
+                  dispatch({ type: "EDIT_BODY", newBody: event.target.value }),
+                )}
+                defaultValue={state.content.body}
+                rows={16}
+                fullWidth
+              />
+            </Label>
+          </Tabs.Panel>
+          <Tabs.Panel id="preview">
+            <ScrollShadow className="max-h-60 overflow-y-scroll">
+              <div dangerouslySetInnerHTML={{ __html: previewHtml }}></div>
+            </ScrollShadow>
+          </Tabs.Panel>
+        </Tabs>
       </div>
       <div className="flex flex-col gap-2 pt-4 pb-4">
         <p>クイズリスト</p>

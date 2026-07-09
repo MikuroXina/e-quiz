@@ -10,6 +10,8 @@ import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
 import { ContentEditor } from "~/organisms/content-editor";
 import { contentSchema, type Content } from "~/lib/content";
+import sanitize from "sanitize-html";
+import { marked } from "marked";
 
 const choicesSchema = v.array(v.string());
 
@@ -20,6 +22,7 @@ interface LoaderData {
     name: string;
   };
   content: Content;
+  previewHtml: string;
 }
 
 export async function loader({
@@ -65,6 +68,8 @@ export async function loader({
     orderBy: (quizzes, { asc }) => asc(quizzes.order),
   });
 
+  const previewHtml = sanitize(await marked(contentRes[0].contentBody));
+
   return {
     userName: user.name,
     course: {
@@ -82,6 +87,7 @@ export async function loader({
         choices: v.parse(choicesSchema, JSON.parse(choices)),
       })),
     },
+    previewHtml,
   };
 }
 
@@ -170,7 +176,8 @@ export default function ContentPage({
         <div className="h-full p-4">
           <ContentEditor
             content={loaderData.content}
-            saveError={!actionData?.success}
+            previewHtml={loaderData.previewHtml}
+            saveError={actionData?.success === false}
             onSave={save}
           />
         </div>
