@@ -39,6 +39,7 @@ export const contentRelations = relations(content, ({ one, many }) => ({
     references: [course.id],
   }),
   quizzes: many(quiz),
+  publishState: one(publishState),
 }));
 
 export const publishState = sqliteTable("publish_state", {

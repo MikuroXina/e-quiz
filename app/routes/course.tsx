@@ -1,6 +1,6 @@
 import { AuthContext } from "~/lib/session";
 import type { Route } from "./+types/course";
-import { Link, redirect, useFetcher } from "react-router";
+import { Link, redirect, useFetcher, useSubmit } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as schema from "~/db/schema";
@@ -15,14 +15,18 @@ import {
   Surface,
   Tooltip,
   Typography,
+  Select,
+  ListBox,
 } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
+import type { PublishState } from "~/lib/content";
 
 interface Content {
   id: string;
   title: string;
+  publishState: PublishState;
 }
 
 interface LoaderData {
@@ -63,10 +67,23 @@ export async function loader({
       id: true,
       title: true,
     },
+    with: {
+      publishState: true,
+    },
     where: (content, { eq }) => eq(content.containerId, course.id),
   });
 
-  return { userName: teacher.name, course, contents };
+  return {
+    userName: teacher.name,
+    course,
+    contents: contents.map((content) => ({
+      ...content,
+      publishState:
+        content.publishState?.state === "PUBLISHED"
+          ? { type: "PUBLISHED", publishedAt: new Date(content.publishState.updatedAt) }
+          : { type: "UNPUBLISHED" },
+    })),
+  };
 }
 
 const postContentSchema = v.object({
@@ -74,10 +91,18 @@ const postContentSchema = v.object({
   container: v.pipe(v.string(), v.nonEmpty()),
 });
 
-const putContentSchema = v.object({
-  content_id: v.pipe(v.string(), v.nonEmpty()),
-  content_title: v.pipe(v.string(), v.nonEmpty()),
-});
+const putContentSchema = v.variant("type", [
+  v.object({
+    type: v.literal("SET_TITLE"),
+    content_id: v.pipe(v.string(), v.nonEmpty()),
+    content_title: v.pipe(v.string(), v.nonEmpty()),
+  }),
+  v.object({
+    type: v.literal("SET_PUBLISH_STATE"),
+    content_id: v.pipe(v.string(), v.nonEmpty()),
+    state: v.union([v.literal("PUBLISHED"), v.literal("UNPUBLISHED")]),
+  }),
+]);
 
 export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
@@ -108,11 +133,31 @@ export async function action({ request, context }: Route.ActionArgs) {
       return new Response(null, { status: 400 });
     }
     try {
-      await db
-        .update(schema.content)
-        .set({ title: body.content_title })
-        .where(eq(schema.content.id, body.content_id))
-        .execute();
+      switch (body.type) {
+        case "SET_TITLE":
+          await db
+            .update(schema.content)
+            .set({ title: body.content_title })
+            .where(eq(schema.content.id, body.content_id))
+            .execute();
+          break;
+        case "SET_PUBLISH_STATE":
+          await db
+            .insert(schema.publishState)
+            .values({
+              content_id: body.content_id,
+              state: body.state,
+              updatedAt: new Date().toISOString(),
+            })
+            .onConflictDoUpdate({
+              target: schema.publishState.content_id,
+              set: {
+                state: body.state,
+                updatedAt: new Date().toISOString(),
+              },
+            });
+          break;
+      }
       return { success: true };
     } catch (err: unknown) {
       console.log("failed to update title of the content: ", err);
@@ -150,6 +195,17 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function Course({
   loaderData: { userName, course, contents },
 }: Route.ComponentProps): React.JSX.Element {
+  const submit = useSubmit();
+  const onChangePublishState = (contentId: string) => (value: PropertyKey | null) => {
+    if (typeof value === "string" && ["PUBLISHED", "UNPUBLISHED"].includes(value)) {
+      const formData = new FormData();
+      formData.append("type", "SET_PUBLISH_STATE");
+      formData.append("content_id", contentId);
+      formData.append("state", value);
+      submit(formData);
+    }
+  };
+
   return (
     <>
       <title>{`講座 ${course.name} - e-Quiz`}</title>
@@ -166,7 +222,7 @@ export default function Course({
             {contents.length === 0 ? (
               <EmptyState>「コンテンツを新規追加」ボタンからコンテンツを追加しましょう</EmptyState>
             ) : (
-              contents.map(({ id, title }) => (
+              contents.map(({ id, title, publishState }) => (
                 <Card key={id}>
                   <Card.Content>
                     <div className="flex justify-between">
@@ -174,6 +230,28 @@ export default function Course({
                         <Typography type="h3">{title}</Typography>
                       </Link>
                       <div className="flex items-center gap-2">
+                        <Select
+                          className="w-32"
+                          defaultValue={publishState.type}
+                          onChange={onChangePublishState(id)}
+                        >
+                          <Select.Trigger>
+                            <Select.Value />
+                            <Select.Indicator />
+                          </Select.Trigger>
+                          <Select.Popover>
+                            <ListBox>
+                              <ListBox.Item id="unpublished" textValue="UNPUBLISHED">
+                                非公開
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                              <ListBox.Item id="published" textValue="PUBLISHED">
+                                公開済み
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            </ListBox>
+                          </Select.Popover>
+                        </Select>
                         <EditContentTitleButton contentId={id} oldTitle={title} />
                         <Link to={`/courses/${course.id}/contents/${id}`}>
                           <Button variant="ghost">開く</Button>
@@ -206,6 +284,7 @@ function AddContentButton({ courseId }: { courseId: string }) {
             </Modal.Header>
             <Modal.Body>
               <fetcher.Form method="POST" className="flex flex-col gap-4">
+                <input type="hidden" name="type" value="SET_TITLE" />
                 <input type="hidden" name="container" value={courseId} />
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="content_title">名前</Label>
