@@ -181,7 +181,9 @@ export function ContentEditor({ content: defaultContent, saveError, onSave }: Co
             className="outline outline-gray-200 outline-solid"
             name="content_body"
             placeholder={"# 見出し 1\n…"}
-            onInput={debounce((event) => dispatch({ type: "EDIT_BODY", newBody: event.data }))}
+            onChange={debounce((event) =>
+              dispatch({ type: "EDIT_BODY", newBody: event.target.value }),
+            )}
             defaultValue={state.content.body}
             rows={16}
             fullWidth
@@ -216,11 +218,11 @@ function QuizzesList({ quizzes, dispatch }: QuizzesListProps) {
                   placeholder={`問題 ${quizIndex + 1}: …`}
                   defaultValue={description}
                   cols={2}
-                  onInput={debounce((event) => {
+                  onChange={debounce((event) => {
                     dispatch({
                       type: "EDIT_QUIZ_DESCRIPTION",
                       quizIndex,
-                      newDescription: event.data,
+                      newDescription: event.target.value,
                     });
                   })}
                 />
@@ -249,12 +251,12 @@ function QuizzesList({ quizzes, dispatch }: QuizzesListProps) {
                       type="text"
                       placeholder="クイズの選択肢…"
                       defaultValue={choice}
-                      onInput={debounce((event) =>
+                      onChange={debounce((event) =>
                         dispatch({
                           type: "EDIT_CHOICE_DESCRIPTION",
                           quizIndex,
                           choiceIndex,
-                          newDescription: event.data,
+                          newDescription: event.target.value,
                         }),
                       )}
                     />
