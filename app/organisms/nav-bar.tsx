@@ -2,7 +2,7 @@ import { Button, Typography } from "@heroui/react";
 import { Link } from "react-router";
 import ArrowUturnCcwLeft from "@gravity-ui/icons/ArrowUturnCcwLeft";
 
-export type User = { type: "teacher"; name: string } | { type: "unauthorized" };
+export type User = { type: "teacher" | "student"; name: string } | { type: "unauthorized" };
 
 export interface NavBarProps {
   title: string;
@@ -26,17 +26,17 @@ export function NavBar({ title, user, hideHistoryBack }: NavBarProps): React.JSX
         <Typography type="h1">{title}</Typography>
       </div>
       <div className="p-2">
-        {user.type === "teacher" ? (
+        {user.type === "unauthorized" ? (
+          <Link to="/log_in">
+            <Button>ログイン</Button>
+          </Link>
+        ) : (
           <div className="flex items-center gap-2">
             <span>ようこそ {user.name} さん</span>
             <Link to="/log_out">
               <Button variant="danger-soft">ログアウト</Button>
             </Link>
           </div>
-        ) : (
-          <Link to="/log_in">
-            <Button>ログイン</Button>
-          </Link>
         )}
       </div>
     </nav>

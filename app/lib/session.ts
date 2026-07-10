@@ -66,18 +66,26 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   const storage = getAuthStorage(env);
   const session = await storage.getSession(request.headers.get("Cookie"));
   const accessToken = session.get("accessToken");
-  if (accessToken != null) {
-    const { data: user } = await new UserInfoClient({
-      domain: env.AUTH0_DOMAIN,
-    }).getUserInfo(accessToken);
+  const entryKind = session.get("entryKind");
+  if (accessToken == null || entryKind == null) {
     context.set(AuthContext, {
-      type: "teacher",
-      id: user.sub,
+      type: "unauthorized",
     });
     return;
   }
 
-  context.set(AuthContext, {
-    type: "unauthorized",
-  });
+  const { data: user } = await new UserInfoClient({
+    domain: env.AUTH0_DOMAIN,
+  }).getUserInfo(accessToken);
+  if (entryKind === "TEACHER") {
+    context.set(AuthContext, {
+      type: "teacher",
+      id: user.sub,
+    });
+  } else {
+    context.set(AuthContext, {
+      type: "student",
+      id: user.sub,
+    });
+  }
 };

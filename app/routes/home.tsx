@@ -29,32 +29,61 @@ type LoaderData =
   | {
       type: "unauthorized";
     }
-  | { type: "teacher"; name: string; courses: readonly Course[] };
+  | { type: "teacher"; name: string; courses: readonly Course[] }
+  | { type: "student"; name: string; courses: readonly Course[] };
 
 export async function loader({ context }: Route.LoaderArgs): Promise<LoaderData> {
   const { env } = context.get(CloudflareContext);
   const auth = context.get(AuthContext);
-  if (auth.type === "unauthorized") {
-    return { type: "unauthorized" };
-  }
   const db = drizzle(env.e_quiz_db, { schema });
-  const teacher = await db.query.teacher.findFirst({
-    columns: { name: true },
-    with: {
-      courses: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    where: (teacher, { eq }) => eq(teacher.id, auth.id),
-  });
-  if (teacher == null) {
-    return { type: "unauthorized" };
-  }
 
-  return { type: "teacher", ...teacher };
+  switch (auth.type) {
+    case "unauthorized":
+      return { type: "unauthorized" };
+    case "teacher":
+      const teacher = await db.query.teacher.findFirst({
+        columns: { name: true },
+        with: {
+          courses: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        where: (teacher, { eq }) => eq(teacher.id, auth.id),
+      });
+      if (teacher == null) {
+        return { type: "unauthorized" };
+      }
+      return { type: "teacher", ...teacher };
+    case "student":
+      const student = await db.query.student.findFirst({
+        columns: { name: true },
+        with: {
+          enrollments: {
+            columns: {},
+            with: {
+              course: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        where: (student, { eq }) => eq(student.id, auth.id),
+      });
+      if (student == null) {
+        return { type: "unauthorized" };
+      }
+      return {
+        type: "student",
+        ...student,
+        courses: student.enrollments.map(({ course }) => course),
+      };
+  }
 }
 
 const postCourseSchema = v.object({
@@ -160,7 +189,9 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
                         <Typography type="h3">{name}</Typography>
                       </Link>
                       <div className="flex items-center gap-2">
-                        <EditCourseNameButton courseId={id} oldName={name} />
+                        {loaderData.type === "teacher" && (
+                          <EditCourseNameButton courseId={id} oldName={name} />
+                        )}
                         <Link to={`/courses/${id}`}>
                           <Button variant="ghost">開く</Button>
                         </Link>
