@@ -179,7 +179,11 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
             {loaderData.type === "unauthorized" ? (
               <EmptyState>右上の「ログイン」ボタンからログインしましょう</EmptyState>
             ) : loaderData.courses.length === 0 ? (
-              <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
+              loaderData.type === "teacher" ? (
+                <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
+              ) : (
+                <EmptyState>教員から講座の招待リンクを受け取ってそれを開きましょう</EmptyState>
+              )
             ) : (
               loaderData.courses.map(({ id, name }) => (
                 <Card key={id}>
