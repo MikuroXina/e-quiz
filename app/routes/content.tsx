@@ -104,7 +104,7 @@ const submitSchema = v.object({
 
 export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
-  if (auth.type === "unauthorized") {
+  if (auth.type !== "teacher") {
     return data({ success: false }, { status: 403 });
   }
 

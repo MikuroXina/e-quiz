@@ -107,7 +107,7 @@ const putContentSchema = v.variant("type", [
 
 export async function action({ request, context }: Route.ActionArgs) {
   const auth = context.get(AuthContext);
-  if (auth.type === "unauthorized") {
+  if (auth.type !== "teacher") {
     return new Response(null, { status: 403 });
   }
 
