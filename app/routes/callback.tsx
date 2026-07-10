@@ -1,10 +1,10 @@
-import { getOAuthStateStorage, getAuthStorage } from "~/lib/session";
+import { getOAuthStateStorage, getAuthStorage, statePackSchema } from "~/lib/session";
 import type { Route } from "./+types/callback";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as v from "valibot";
 import { redirect } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
-import { teacher } from "~/db/schema";
+import { student, teacher } from "~/db/schema";
 import { UserInfoClient } from "auth0";
 
 const getTokenResponseSchema = v.object({
@@ -30,7 +30,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
   }
 
   const auth0CallbackRequestSchema = v.object({
-    state: v.literal(state),
+    state: statePackSchema(state),
     code: v.string(),
   });
   const params = Object.fromEntries(new URL(request.url).searchParams.entries());
@@ -39,7 +39,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     console.log("invalid callback params: ", requestBodyRes.issues);
     return await returnToLogInResponse();
   }
-  const { code } = requestBodyRes.output;
+  const {
+    code,
+    state: { entryKind },
+  } = requestBodyRes.output;
 
   const getTokenBody = {
     grant_type: "authorization_code",
@@ -72,22 +75,37 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     }).getUserInfo(access_token);
 
     const db = drizzle(env.e_quiz_db);
-    await db
-      .insert(teacher)
-      .values({
-        id: user.sub,
-        name: user.name,
-      })
-      .onConflictDoUpdate({
-        target: teacher.id,
-        set: { name: user.name },
-      })
-      .execute();
+    if (entryKind === "TEACHER") {
+      await db
+        .insert(teacher)
+        .values({
+          id: user.sub,
+          name: user.name,
+        })
+        .onConflictDoUpdate({
+          target: teacher.id,
+          set: { name: user.name },
+        })
+        .execute();
+    } else {
+      await db
+        .insert(student)
+        .values({
+          id: user.sub,
+          name: user.name,
+        })
+        .onConflictDoUpdate({
+          target: student.id,
+          set: { name: user.name },
+        })
+        .execute();
+    }
 
     const headers = new Headers();
     const authStorage = getAuthStorage(env);
     const authSession = await authStorage.getSession(request.headers.get("Cookie"));
     authSession.set("accessToken", access_token);
+    authSession.set("entryKind", entryKind);
     headers.append("Set-Cookie", await authStorage.commitSession(authSession));
     headers.append("Set-Cookie", await stateStorage.destroySession(stateSession));
 
