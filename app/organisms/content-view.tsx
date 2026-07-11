@@ -5,6 +5,7 @@ import {
   Label,
   Radio,
   RadioGroup,
+  Surface,
   Typography,
 } from "@heroui/react";
 import { Form } from "react-router";
@@ -28,7 +29,7 @@ export function ContentView({
         <Typography type="h2">クイズ</Typography>
         <div>
           {content.quizzes.map((quiz, i) => (
-            <div key={quiz.id}>
+            <Surface className="rounded-3xl p-3" variant="secondary" key={quiz.id}>
               <Form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -61,7 +62,7 @@ export function ContentView({
                   回答
                 </Button>
               </Form>
-            </div>
+            </Surface>
           ))}
         </div>
       </div>

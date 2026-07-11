@@ -188,15 +188,14 @@ export default function ContentPage({
     return { success: true } as const;
   };
   const answer = (quizId: string, answer: number) => {
-    submit(
-      { answer },
-      {
-        action: `/courses/${loaderData.course.id}/contents/${loaderData.content.id}/quizzes/${quizId}`,
-        method: "POST",
-        encType: "application/json",
-        navigate: false,
-      },
-    ).catch(console.error);
+    const formData = new FormData();
+    formData.append("answer", answer.toString());
+    submit(formData, {
+      action: `/courses/${loaderData.course.id}/contents/${loaderData.content.id}/quizzes/${quizId}`,
+      method: "POST",
+      encType: "multipart/form-data",
+      navigate: false,
+    }).catch(console.error);
   };
 
   return (
