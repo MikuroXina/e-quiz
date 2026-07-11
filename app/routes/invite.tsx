@@ -1,4 +1,4 @@
-import { Button, Typography } from "@heroui/react";
+import { Button, Surface, Typography } from "@heroui/react";
 import type { Route } from "./+types/invite";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { AuthContext } from "~/lib/session";
@@ -79,20 +79,27 @@ export default function InvitePage({
   loaderData: { course },
 }: Route.ComponentProps): React.JSX.Element {
   return (
-    <main>
+    <>
       <title>招待確認</title>
-      <Typography type="h1">招待確認</Typography>
-      <p>
-        教員 {course.owner.name} から講座「{course.name}」に招待されました
-      </p>
-      <p>この講座を受講しますか？</p>
-      <div>
-        <Form method="POST">
-          <input type="hidden" name="course_id" value={course.id} />
-          <Button type="submit">受講する</Button>
-        </Form>
+      <div className="grid min-h-screen items-center justify-evenly">
+        <Surface
+          className="flex max-w-120 flex-col gap-3 rounded-xl p-6 outline-1 outline-solid"
+          variant="default"
+        >
+          <Typography type="h1">招待確認</Typography>
+          <p>
+            教員 {course.owner.name} から講座「{course.name}」に招待されました
+          </p>
+          <p>この講座を受講しますか？</p>
+          <div>
+            <Form method="POST">
+              <input type="hidden" name="course_id" value={course.id} />
+              <Button type="submit">受講する</Button>
+            </Form>
+          </div>
+          <p>受講しない場合はこの画面を閉じてください</p>
+        </Surface>
       </div>
-      <p>受講しない場合はこの画面を閉じてください</p>
-    </main>
+    </>
   );
 }
