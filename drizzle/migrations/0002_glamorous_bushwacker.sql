@@ -1,0 +1,1 @@
+CREATE INDEX `created_by__sent_to_id__created_at` ON `submission` (`createdById`,`sentToId`,`createdAt`);

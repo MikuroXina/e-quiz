@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const teacher = sqliteTable("teacher", {
   id: text().primaryKey(),
@@ -110,16 +110,26 @@ export const enrollmentRelations = relations(enrollment, ({ one }) => ({
   }),
 }));
 
-export const submission = sqliteTable("submission", {
-  createdById: text()
-    .notNull()
-    .references(() => student.id),
-  sentToId: text()
-    .notNull()
-    .references(() => quiz.id),
-  createdAt: int({ mode: "timestamp" }).notNull(),
-  answer: int().notNull(),
-});
+export const submission = sqliteTable(
+  "submission",
+  {
+    createdById: text()
+      .notNull()
+      .references(() => student.id),
+    sentToId: text()
+      .notNull()
+      .references(() => quiz.id),
+    createdAt: int({ mode: "timestamp" }).notNull(),
+    answer: int().notNull(),
+  },
+  (table) => [
+    index("created_by__sent_to_id__created_at").on(
+      table.createdById,
+      table.sentToId,
+      table.createdAt,
+    ),
+  ],
+);
 export const submissionRelations = relations(submission, ({ one }) => ({
   createdBy: one(student, {
     fields: [submission.createdById],
