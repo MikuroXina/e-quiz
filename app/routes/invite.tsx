@@ -12,6 +12,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (courseId == null || courseId === "") {
     return redirect("/");
   }
+
+  const session = context.get(AuthContext);
+  if (session.type !== "student") {
+    const params = new URLSearchParams({
+      back: "/invite?" + searchParams,
+    });
+    return redirect("/log_in?" + params);
+  }
+
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db, { schema });
   const course = await db.query.course.findFirst({
@@ -30,14 +39,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   });
   if (course == null) {
     return redirect("/");
-  }
-
-  const session = context.get(AuthContext);
-  if (session.type !== "teacher") {
-    const params = new URLSearchParams({
-      back: "/invite?" + searchParams,
-    });
-    return redirect("/log_in?" + params);
   }
 
   return { course };
