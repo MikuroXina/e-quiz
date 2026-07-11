@@ -12,11 +12,12 @@ import { ContentEditor } from "~/organisms/content-editor";
 import { contentSchema, type Content } from "~/lib/content";
 import sanitize from "sanitize-html";
 import { marked } from "marked";
+import { ContentView } from "~/organisms/content-view";
 
 const choicesSchema = v.array(v.string());
 
 interface LoaderData {
-  userName: string;
+  user: { type: "teacher" | "student"; name: string };
   course: {
     id: string;
     name: string;
@@ -74,7 +75,10 @@ export async function loader({
   const previewHtml = sanitize(await marked(contentRes[0].contentBody));
 
   return {
-    userName: user.name,
+    user: {
+      type: auth.type,
+      name: user.name,
+    },
     course: {
       id: contentRes[0].courseId,
       name: contentRes[0].courseName,
@@ -183,24 +187,40 @@ export default function ContentPage({
     await submit(data, { method: "POST", encType: "multipart/form-data" });
     return { success: true } as const;
   };
+  const answer = (quizId: string, answer: number) => {
+    submit(
+      { answer },
+      {
+        action: `/courses/${loaderData.course.id}/contents/${loaderData.content.id}/quizzes/${quizId}`,
+        method: "POST",
+        encType: "application/json",
+        navigate: false,
+      },
+    ).catch(console.error);
+  };
 
   return (
     <>
       <title>{`コンテンツ ${loaderData.content.title} - e-Quiz`}</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar
-            title={`コンテンツ ${loaderData.content.title}`}
-            user={{ type: "teacher", name: loaderData.userName }}
-          />
+          <NavBar title={`コンテンツ ${loaderData.content.title}`} user={loaderData.user} />
         </Surface>
         <div className="h-full p-4">
-          <ContentEditor
-            content={loaderData.content}
-            previewHtml={loaderData.previewHtml}
-            saveError={actionData?.success === false}
-            onSave={save}
-          />
+          {loaderData.user.type === "teacher" ? (
+            <ContentEditor
+              content={loaderData.content}
+              previewHtml={loaderData.previewHtml}
+              saveError={actionData?.success === false}
+              onSave={save}
+            />
+          ) : (
+            <ContentView
+              content={loaderData.content}
+              previewHtml={loaderData.previewHtml}
+              onSubmit={answer}
+            />
+          )}
         </div>
       </div>
     </>
