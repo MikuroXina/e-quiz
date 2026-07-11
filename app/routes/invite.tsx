@@ -67,7 +67,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       })
       .onConflictDoNothing()
       .execute();
-    return { success: true };
+    return redirect("/");
   } catch (err: unknown) {
     console.log("failed to enroll the course: ", err);
     return new Response(null, { status: 500 });
