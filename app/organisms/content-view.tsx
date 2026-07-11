@@ -8,13 +8,15 @@ import {
   Surface,
   Typography,
 } from "@heroui/react";
+import { useState } from "react";
 import { Form } from "react-router";
 import type { Content } from "~/lib/content";
+import { RightOrWrong } from "./right-or-wrong";
 
 export interface ContentViewProps {
   previewHtml: string;
   content: Content;
-  onSubmit: (quizId: string, answer: number) => void;
+  onSubmit: (quizId: string, answer: number) => Promise<void>;
 }
 
 export function ContentView({
@@ -22,6 +24,10 @@ export function ContentView({
   content,
   onSubmit,
 }: ContentViewProps): React.JSX.Element {
+  const [answers, setAnswers] = useState<readonly (null | number)[]>(
+    content.quizzes.map(() => null),
+  );
+
   return (
     <div>
       <div dangerouslySetInnerHTML={{ __html: previewHtml }}></div>
@@ -34,13 +40,15 @@ export function ContentView({
                 onSubmit={(event) => {
                   event.preventDefault();
                   const { elements } = event.target;
-                  const answerNode = elements.namedItem("answer");
+                  const answerNode = elements.namedItem("answer") as RadioNodeList | null;
                   if (answerNode == null) {
                     return;
                   }
 
-                  const answer = parseInt((answerNode as RadioNodeList).value, 10);
-                  onSubmit(quiz.id, answer);
+                  const answer = parseInt(answerNode.value, 10);
+                  onSubmit(quiz.id, answer).then(() =>
+                    setAnswers((list) => list.toSpliced(i, 1, answer)),
+                  );
                 }}
               >
                 <RadioGroup isRequired name="answer">
@@ -58,9 +66,12 @@ export function ContentView({
                   ))}
                   <FieldError>選択肢を 1 つ選んでください</FieldError>
                 </RadioGroup>
-                <Button className="mt-4" type="submit">
-                  回答
-                </Button>
+                <div className="mt-4 flex items-center gap-4">
+                  <Button isDisabled={quiz.solution === answers[i]} type="submit">
+                    回答
+                  </Button>
+                  <RightOrWrong solution={quiz.solution} answer={answers[i]} />
+                </div>
               </Form>
             </Surface>
           ))}
