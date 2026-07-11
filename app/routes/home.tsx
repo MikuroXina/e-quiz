@@ -19,6 +19,7 @@ import * as schema from "~/db/schema";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
+import { CopyInviteLink } from "~/organisms/copy-invite-link";
 
 interface Course {
   id: string;
@@ -170,7 +171,7 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
         <Surface className="sticky top-0 z-10 drop-shadow-md">
           <NavBar title="ホーム" user={loaderData} hideHistoryBack />
         </Surface>
-        <div className="h-full p-4">
+        <div className="flex h-full flex-col gap-4 p-4">
           <div className="flex justify-between">
             <Typography type="h2">講座一覧</Typography>
             {loaderData.type === "teacher" && <AddCourseButton />}
@@ -194,7 +195,10 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
                       </Link>
                       <div className="flex items-center gap-2">
                         {loaderData.type === "teacher" && (
-                          <EditCourseNameButton courseId={id} oldName={name} />
+                          <>
+                            <CopyInviteLink courseId={id} />
+                            <EditCourseNameButton courseId={id} oldName={name} />
+                          </>
                         )}
                         <Link to={`/courses/${id}`}>
                           <Button variant="ghost">開く</Button>
@@ -256,7 +260,7 @@ function EditCourseNameButton({ courseId, oldName }: { courseId: string; oldName
     <Modal>
       <Tooltip delay={0}>
         <Tooltip.Trigger>
-          <Button variant="secondary">
+          <Button isIconOnly variant="secondary">
             <Pencil />
           </Button>
         </Tooltip.Trigger>

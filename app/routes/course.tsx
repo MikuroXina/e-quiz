@@ -23,6 +23,7 @@ import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
 import type { PublishState } from "~/lib/content";
 import { PublishStateSelector } from "~/organisms/publish-state-selector";
+import { CopyInviteLink } from "~/organisms/copy-invite-link";
 
 interface Content {
   id: string;
@@ -212,10 +213,13 @@ export default function Course({
         <Surface className="sticky top-0 z-10 drop-shadow-md">
           <NavBar title={`講座 ${course.name}`} user={{ type: "teacher", name: userName }} />
         </Surface>
-        <div className="h-full p-4">
+        <div className="flex h-full flex-col gap-4 p-4">
           <div className="flex justify-between">
             <Typography type="h2">コンテンツ一覧</Typography>
-            <AddContentButton courseId={course.id} />
+            <div className="flex gap-2">
+              <CopyInviteLink courseId={course.id} />
+              <AddContentButton courseId={course.id} />
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             {contents.length === 0 ? (
