@@ -15,8 +15,6 @@ import {
   Surface,
   Tooltip,
   Typography,
-  Select,
-  ListBox,
 } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
@@ -32,7 +30,7 @@ interface Content {
 }
 
 interface LoaderData {
-  userName: string;
+  user: { type: "student" | "teacher"; name: string };
   course: { id: string; name: string };
   contents: readonly Content[];
 }
@@ -42,50 +40,91 @@ export async function loader({
   context,
 }: Route.LoaderArgs): Promise<Response | LoaderData> {
   const auth = context.get(AuthContext);
+  const redirectToLoginAndBack = redirect(`/log_in?back=/courses/${course_id}`);
   if (auth.type === "unauthorized") {
-    return redirect(`/log_in?back=/courses/${course_id}`);
+    return redirectToLoginAndBack;
   }
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db, { schema });
-  const teacher = await db.query.teacher.findFirst({
-    columns: { name: true },
-    where: (teacher, { eq }) => eq(teacher.id, auth.id),
-  });
-  if (teacher == null) {
-    return redirect(`/log_in?back=/courses/${course_id}`);
-  }
-  const course = await db.query.course.findFirst({
-    where: (course, { eq, and }) => and(eq(course.id, course_id), eq(course.ownerId, auth.id)),
-  });
-  if (course == null) {
-    return new Response(null, {
-      status: 404,
-    });
-  }
+  switch (auth.type) {
+    case "student": {
+      const student = await db.query.student.findFirst({
+        columns: { name: true },
+        where: (student, { eq }) => eq(student.id, auth.id),
+      });
+      const course = await db.query.course.findFirst({
+        columns: { name: true },
+        where: (course, { eq }) => eq(course.id, course_id),
+      });
+      const contents = await db
+        .select({
+          id: schema.content.id,
+          title: schema.content.title,
+          publishedAt: schema.publishState.updatedAt,
+        })
+        .from(schema.content)
+        .leftJoin(schema.publishState, eq(schema.content.id, schema.publishState.content_id))
+        .where(eq(schema.publishState.state, "PUBLISHED"));
+      if (student == null || course == null) {
+        return redirectToLoginAndBack;
+      }
 
-  const contents = await db.query.content.findMany({
-    columns: {
-      id: true,
-      title: true,
-    },
-    with: {
-      publishState: true,
-    },
-    where: (content, { eq }) => eq(content.containerId, course.id),
-  });
+      return {
+        user: { type: "student", name: student.name },
+        course: { id: course_id, name: course.name },
+        contents: contents.map(
+          (content) =>
+            ({
+              ...content,
+              publishState: { type: "PUBLISHED", publishedAt: content.publishedAt },
+            }) as Content,
+        ),
+      };
+    }
+    case "teacher": {
+      const teacher = await db.query.teacher.findFirst({
+        columns: { name: true },
+        where: (teacher, { eq }) => eq(teacher.id, auth.id),
+      });
+      if (teacher == null) {
+        return redirectToLoginAndBack;
+      }
+      const course = await db.query.course.findFirst({
+        with: {
+          contents: {
+            columns: { id: true, title: true },
+            with: {
+              publishState: {
+                columns: {
+                  state: true,
+                  updatedAt: true,
+                },
+              },
+            },
+          },
+        },
+        where: (course, { eq, and }) => and(eq(course.id, course_id), eq(course.ownerId, auth.id)),
+      });
+      if (course == null) {
+        return new Response(null, {
+          status: 404,
+        });
+      }
 
-  return {
-    userName: teacher.name,
-    course,
-    contents: contents.map((content) => ({
-      ...content,
-      publishState:
-        content.publishState?.state === "PUBLISHED"
-          ? { type: "PUBLISHED", publishedAt: content.publishState.updatedAt }
-          : { type: "UNPUBLISHED" },
-    })),
-  };
+      return {
+        user: { type: "teacher", name: teacher.name },
+        course,
+        contents: course.contents.map((content) => ({
+          ...content,
+          publishState:
+            content.publishState?.state === "PUBLISHED"
+              ? { type: "PUBLISHED", publishedAt: content.publishState.updatedAt }
+              : { type: "UNPUBLISHED" },
+        })),
+      };
+    }
+  }
 }
 
 const postContentSchema = v.object({
@@ -195,7 +234,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Course({
-  loaderData: { userName, course, contents },
+  loaderData: { user, course, contents },
 }: Route.ComponentProps): React.JSX.Element {
   const submit = useSubmit();
   const onChangePublishState = (contentId: string) => (value: PublishState["type"]) => {
@@ -211,19 +250,29 @@ export default function Course({
       <title>{`講座 ${course.name} - e-Quiz`}</title>
       <div className="h-screen overflow-auto">
         <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title={`講座 ${course.name}`} user={{ type: "teacher", name: userName }} />
+          <NavBar title={`講座 ${course.name}`} user={user} />
         </Surface>
         <div className="flex h-full flex-col gap-4 p-4">
           <div className="flex justify-between">
             <Typography type="h2">コンテンツ一覧</Typography>
             <div className="flex gap-2">
-              <CopyInviteLink courseId={course.id} />
-              <AddContentButton courseId={course.id} />
+              {user.type === "teacher" && (
+                <>
+                  <CopyInviteLink courseId={course.id} />
+                  <AddContentButton courseId={course.id} />
+                </>
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-2">
             {contents.length === 0 ? (
-              <EmptyState>「コンテンツを新規追加」ボタンからコンテンツを追加しましょう</EmptyState>
+              user.type === "student" ? (
+                <EmptyState>まだ公開されているコンテンツがありません</EmptyState>
+              ) : (
+                <EmptyState>
+                  「コンテンツを新規追加」ボタンからコンテンツを追加しましょう
+                </EmptyState>
+              )
             ) : (
               contents.map(({ id, title, publishState }) => (
                 <Card key={id}>
@@ -233,11 +282,15 @@ export default function Course({
                         <Typography type="h3">{title}</Typography>
                       </Link>
                       <div className="flex items-center gap-2">
-                        <PublishStateSelector
-                          publishState={publishState}
-                          onChange={onChangePublishState(id)}
-                        />
-                        <EditContentTitleButton contentId={id} oldTitle={title} />
+                        {user.type === "teacher" && (
+                          <>
+                            <PublishStateSelector
+                              publishState={publishState}
+                              onChange={onChangePublishState(id)}
+                            />
+                            <EditContentTitleButton contentId={id} oldTitle={title} />
+                          </>
+                        )}
                         <Link to={`/courses/${course.id}/contents/${id}`}>
                           <Button variant="ghost">開く</Button>
                         </Link>
