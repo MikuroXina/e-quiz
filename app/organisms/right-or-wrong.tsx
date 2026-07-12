@@ -2,15 +2,14 @@ import Circle from "@gravity-ui/icons/Circle";
 import Xmark from "@gravity-ui/icons/Xmark";
 
 export interface RightOrWrongProps {
-  solution: number;
-  answer: number | null;
+  status: boolean | null;
 }
 
-export function RightOrWrong({ solution, answer }: RightOrWrongProps): React.JSX.Element {
-  if (answer === null) {
+export function RightOrWrong({ status }: RightOrWrongProps): React.JSX.Element {
+  if (status === null) {
     return <></>;
   }
-  return solution === answer ? (
+  return status ? (
     <div className="text-green-600">
       正解! <Circle className="inline-block translate-y-[-8%]" />
     </div>
