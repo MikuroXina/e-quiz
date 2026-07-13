@@ -43,7 +43,7 @@ export const contentRelations = relations(content, ({ one, many }) => ({
 }));
 
 export const publishState = sqliteTable("publish_state", {
-  content_id: text()
+  contentId: text()
     .primaryKey()
     .references(() => content.id),
   state: text().notNull().default("UNPUBLISHED"),
@@ -51,7 +51,7 @@ export const publishState = sqliteTable("publish_state", {
 });
 export const publishStateRelations = relations(publishState, ({ one }) => ({
   content: one(content, {
-    fields: [publishState.content_id],
+    fields: [publishState.contentId],
     references: [content.id],
   }),
 }));

@@ -64,7 +64,7 @@ export async function loader({
           publishedAt: schema.publishState.updatedAt,
         })
         .from(schema.content)
-        .leftJoin(schema.publishState, eq(schema.content.id, schema.publishState.content_id))
+        .leftJoin(schema.publishState, eq(schema.content.id, schema.publishState.contentId))
         .where(eq(schema.publishState.state, "PUBLISHED"));
       if (student == null || course == null) {
         return redirectToLoginAndBack;
@@ -186,12 +186,12 @@ export async function action({ request, context }: Route.ActionArgs) {
           await db
             .insert(schema.publishState)
             .values({
-              content_id: body.content_id,
+              contentId: body.content_id,
               state: body.state,
               updatedAt: new Date().toISOString(),
             })
             .onConflictDoUpdate({
-              target: schema.publishState.content_id,
+              target: schema.publishState.contentId,
               set: {
                 state: body.state,
                 updatedAt: new Date().toISOString(),

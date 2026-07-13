@@ -90,7 +90,7 @@ export async function loader({
       orderBy: (quizzes, { asc }) => asc(quizzes.order),
     });
     const publishStateRes = await db.query.publishState.findFirst({
-      where: (publishState, { eq }) => eq(publishState.content_id, contentRes[0].contentId),
+      where: (publishState, { eq }) => eq(publishState.contentId, contentRes[0].contentId),
     });
 
     const previewHtml = await mdToHtml(contentRes[0].contentBody);
@@ -237,12 +237,12 @@ export async function action({ request, context }: Route.ActionArgs) {
       db
         .insert(schema.publishState)
         .values({
-          content_id: body.new_content.id,
+          contentId: body.new_content.id,
           state: body.new_content.publishState.type,
           updatedAt,
         })
         .onConflictDoUpdate({
-          target: schema.publishState.content_id,
+          target: schema.publishState.contentId,
           set: {
             state: body.new_content.publishState.type,
             updatedAt,
