@@ -5,16 +5,16 @@ import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { NavBar } from "~/organisms/nav-bar";
-import { Surface, Table } from "@heroui/react";
+import { EmptyState, Surface, Table } from "@heroui/react";
 
 interface Indicator {
   studentId: string;
   studentName: string;
   corrects: number;
   progress: number;
-  stumble: number;
-  speed: number;
-  prudence: number;
+  stumble: number | null;
+  speed: number | null;
+  prudence: number | null;
 }
 
 interface LoaderData {
@@ -153,16 +153,22 @@ export default function StatsPage({
                   <Table.Column>学習の速さ</Table.Column>
                   <Table.Column>回答の慎重さ</Table.Column>
                 </Table.Header>
-                <Table.Body>
+                <Table.Body
+                  renderEmptyState={() => (
+                    <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                      <span className="text-muted text-sm">まだ受講者が居ません</span>
+                    </EmptyState>
+                  )}
+                >
                   {indicators.map(
                     ({ studentId, studentName, corrects, progress, stumble, speed, prudence }) => (
                       <Table.Row key={studentId}>
                         <Table.Cell>{studentName}</Table.Cell>
                         <Table.Cell>{corrects}</Table.Cell>
                         <Table.Cell>{progress}</Table.Cell>
-                        <Table.Cell>{stumble}</Table.Cell>
-                        <Table.Cell>{speed}</Table.Cell>
-                        <Table.Cell>{prudence}</Table.Cell>
+                        <Table.Cell>{stumble ?? "-"}</Table.Cell>
+                        <Table.Cell>{speed ?? "-"}</Table.Cell>
+                        <Table.Cell>{prudence ?? "-"}</Table.Cell>
                       </Table.Row>
                     ),
                   )}
