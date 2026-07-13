@@ -1,27 +1,18 @@
 import { AuthContext } from "~/lib/session";
 import type { Route } from "./+types/course";
-import { Link, redirect, useFetcher, useSubmit } from "react-router";
+import { Link, redirect, useSubmit } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as schema from "~/db/schema";
 import { and, eq } from "drizzle-orm";
-import {
-  Button,
-  Card,
-  EmptyState,
-  Input,
-  Label,
-  Modal,
-  Surface,
-  Tooltip,
-  Typography,
-} from "@heroui/react";
+import { Button, Card, EmptyState, Surface, Typography } from "@heroui/react";
 import { NavBar } from "~/organisms/nav-bar";
 import * as v from "valibot";
-import Pencil from "@gravity-ui/icons/Pencil";
 import type { PublishState } from "~/lib/content";
 import { PublishStateSelector } from "~/organisms/publish-state-selector";
 import { CopyInviteLink } from "~/organisms/copy-invite-link";
+import { EditContentTitleButton } from "~/organisms/edit-content-title-button";
+import { AddContentButton } from "~/organisms/add-content-button";
 
 interface Content {
   id: string;
@@ -304,93 +295,5 @@ export default function Course({
         </div>
       </div>
     </>
-  );
-}
-
-function AddContentButton({ courseId }: { courseId: string }) {
-  const fetcher = useFetcher({ key: "contents" });
-
-  return (
-    <Modal>
-      <Button>コンテンツを新規追加</Button>
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>新規コンテンツの情報を入力</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <fetcher.Form method="POST" className="flex flex-col gap-4">
-                <input type="hidden" name="type" value="SET_TITLE" />
-                <input type="hidden" name="container" value={courseId} />
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="content_title">名前</Label>
-                  <Input
-                    id="content_title"
-                    name="name"
-                    className="min-w-8"
-                    placeholder="某コンテンツ"
-                    required
-                  />
-                </div>
-                <Button className="self-end" type="submit">
-                  追加する
-                </Button>
-              </fetcher.Form>
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
-  );
-}
-
-function EditContentTitleButton({ contentId, oldTitle }: { contentId: string; oldTitle: string }) {
-  const fetcher = useFetcher({ key: "courses" });
-
-  return (
-    <Modal>
-      <Tooltip delay={0}>
-        <Tooltip.Trigger>
-          <Button variant="secondary">
-            <Pencil />
-          </Button>
-        </Tooltip.Trigger>
-        <Tooltip.Content>
-          <Tooltip.Arrow />
-          コンテンツ情報を編集
-        </Tooltip.Content>
-      </Tooltip>
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>コンテンツ「{oldTitle}」の新しい名前を入力</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <fetcher.Form method="PUT" className="flex flex-col gap-4">
-                <input type="hidden" name="content_id" value={contentId} />
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="new_content_title">名前</Label>
-                  <Input
-                    id="new_content_title"
-                    name="content_title"
-                    className="min-w-8"
-                    placeholder="某コンテンツ"
-                    required
-                    defaultValue={oldTitle}
-                  />
-                </div>
-                <Button className="self-end" type="submit">
-                  変更する
-                </Button>
-              </fetcher.Form>
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
   );
 }
