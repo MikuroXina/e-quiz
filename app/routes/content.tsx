@@ -175,6 +175,14 @@ export async function loader({
       answerStatus: submissions.length === 0 ? null : solution === submissions[0].answer,
     }));
 
+    await db
+      .insert(schema.firstView)
+      .values({
+        whoId: auth.id,
+        readId: params.content_id,
+      })
+      .onConflictDoNothing();
+
     const previewHtml = await mdToHtml(content.content);
 
     return {

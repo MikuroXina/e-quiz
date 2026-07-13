@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { index, int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
+import { index, int, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const teacher = sqliteTable("teacher", {
   id: text().primaryKey(),
@@ -119,7 +119,9 @@ export const submission = sqliteTable(
     sentToId: text()
       .notNull()
       .references(() => quiz.id),
-    createdAt: int({ mode: "timestamp" }).notNull(),
+    createdAt: int({ mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
     answer: int().notNull(),
   },
   (table) => [
@@ -138,5 +140,36 @@ export const submissionRelations = relations(submission, ({ one }) => ({
   sentTo: one(quiz, {
     fields: [submission.sentToId],
     references: [quiz.id],
+  }),
+}));
+
+export const firstView = sqliteTable(
+  "first_view",
+  {
+    whoId: text()
+      .notNull()
+      .references(() => student.id),
+    readId: text()
+      .notNull()
+      .references(() => content.id),
+    createdAt: int({ mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    primaryKey({
+      name: "who__read",
+      columns: [table.whoId, table.readId],
+    }),
+  ],
+);
+export const firstViewRelations = relations(firstView, ({ one }) => ({
+  who: one(student, {
+    fields: [firstView.whoId],
+    references: [student.id],
+  }),
+  read: one(content, {
+    fields: [firstView.readId],
+    references: [content.id],
   }),
 }));
