@@ -66,7 +66,12 @@ export async function loader({
         })
         .from(schema.content)
         .leftJoin(schema.publishState, eq(schema.content.id, schema.publishState.contentId))
-        .where(eq(schema.publishState.state, "PUBLISHED"));
+        .where(
+          and(
+            eq(schema.publishState.state, "PUBLISHED"),
+            eq(schema.content.containerId, course_id),
+          ),
+        );
 
       return {
         user: { type: "student", name: student.name },
