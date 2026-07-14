@@ -73,6 +73,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     const { data: user } = await new UserInfoClient({
       domain: env.AUTH0_DOMAIN,
     }).getUserInfo(access_token);
+    const name = user.preferred_username ?? user.nickname;
 
     const db = drizzle(env.e_quiz_db);
     if (entryKind === "TEACHER") {
@@ -80,11 +81,11 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         .insert(teacher)
         .values({
           id: user.sub,
-          name: user.name,
+          name,
         })
         .onConflictDoUpdate({
           target: teacher.id,
-          set: { name: user.name },
+          set: { name },
         })
         .execute();
     } else {
@@ -92,11 +93,11 @@ export async function loader({ context, request }: Route.LoaderArgs) {
         .insert(student)
         .values({
           id: user.sub,
-          name: user.name,
+          name,
         })
         .onConflictDoUpdate({
           target: student.id,
-          set: { name: user.name },
+          set: { name },
         })
         .execute();
     }
