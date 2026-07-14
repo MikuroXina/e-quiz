@@ -13,6 +13,7 @@ import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { EditContentTitleButton } from "~/organisms/edit-content-title-button";
 import { AddContentButton } from "~/organisms/add-content-button";
 import { Template } from "~/organisms/template";
+import PersonMagnifier from "@gravity-ui/icons/PersonMagnifier";
 
 interface Content {
   id: string;
@@ -271,6 +272,11 @@ export default function Course({
                           publishState={publishState}
                           onChange={onChangePublishState(id)}
                         />
+                        <Link to={`/courses/${course.id}/stats`}>
+                          <Button isIconOnly>
+                            <PersonMagnifier />
+                          </Button>
+                        </Link>
                         <EditContentTitleButton contentId={id} oldTitle={title} />
                       </>
                     )}
