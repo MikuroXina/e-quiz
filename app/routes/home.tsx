@@ -1,16 +1,5 @@
-import {
-  Button,
-  Card,
-  EmptyState,
-  Input,
-  Label,
-  Modal,
-  Surface,
-  Tooltip,
-  Typography,
-} from "@heroui/react";
+import { Button, Card, EmptyState, Input, Label, Modal, Tooltip, Typography } from "@heroui/react";
 import { Link, useFetcher } from "react-router";
-import { NavBar } from "~/organisms/nav-bar";
 import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
 import { CloudflareContext } from "~/lib/cloudflare";
@@ -20,6 +9,7 @@ import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import Pencil from "@gravity-ui/icons/Pencil";
 import { CopyInviteLink } from "~/organisms/copy-invite-link";
+import { Template } from "~/organisms/template";
 
 interface Course {
   id: string;
@@ -165,54 +155,47 @@ export async function action({ request, context }: Route.ActionArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps): React.JSX.Element {
   return (
-    <>
-      <title>ホーム - e-Quiz</title>
-      <div className="h-screen overflow-auto">
-        <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title="ホーム" user={loaderData} hideHistoryBack />
-        </Surface>
-        <div className="flex h-full flex-col gap-4 p-4">
-          <div className="flex justify-between">
-            <Typography type="h2">講座一覧</Typography>
-            {loaderData.type === "teacher" && <AddCourseButton />}
-          </div>
-          <div className="flex flex-col gap-2">
-            {loaderData.type === "unauthorized" ? (
-              <EmptyState>右上の「ログイン」ボタンからログインしましょう</EmptyState>
-            ) : loaderData.courses.length === 0 ? (
-              loaderData.type === "teacher" ? (
-                <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
-              ) : (
-                <EmptyState>教員から講座の招待リンクを受け取ってそれを開きましょう</EmptyState>
-              )
-            ) : (
-              loaderData.courses.map(({ id, name }) => (
-                <Card key={id}>
-                  <Card.Content>
-                    <div className="flex justify-between">
-                      <Link to={`/courses/${id}`}>
-                        <Typography type="h3">{name}</Typography>
-                      </Link>
-                      <div className="flex items-center gap-2">
-                        {loaderData.type === "teacher" && (
-                          <>
-                            <CopyInviteLink courseId={id} />
-                            <EditCourseNameButton courseId={id} oldName={name} />
-                          </>
-                        )}
-                        <Link to={`/courses/${id}`}>
-                          <Button variant="ghost">開く</Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </Card.Content>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
+    <Template title="ホーム" user={loaderData}>
+      {" "}
+      <div className="flex justify-between">
+        <Typography type="h2">講座一覧</Typography>
+        {loaderData.type === "teacher" && <AddCourseButton />}
       </div>
-    </>
+      <div className="flex flex-col gap-2">
+        {loaderData.type === "unauthorized" ? (
+          <EmptyState>右上の「ログイン」ボタンからログインしましょう</EmptyState>
+        ) : loaderData.courses.length === 0 ? (
+          loaderData.type === "teacher" ? (
+            <EmptyState>「講座を新規追加」ボタンから講座を追加しましょう</EmptyState>
+          ) : (
+            <EmptyState>教員から講座の招待リンクを受け取ってそれを開きましょう</EmptyState>
+          )
+        ) : (
+          loaderData.courses.map(({ id, name }) => (
+            <Card key={id}>
+              <Card.Content>
+                <div className="flex justify-between">
+                  <Link to={`/courses/${id}`}>
+                    <Typography type="h3">{name}</Typography>
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    {loaderData.type === "teacher" && (
+                      <>
+                        <CopyInviteLink courseId={id} />
+                        <EditCourseNameButton courseId={id} oldName={name} />
+                      </>
+                    )}
+                    <Link to={`/courses/${id}`}>
+                      <Button variant="ghost">開く</Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          ))
+        )}
+      </div>
+    </Template>
   );
 }
 

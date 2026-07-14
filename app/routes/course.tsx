@@ -5,14 +5,14 @@ import { drizzle } from "drizzle-orm/d1";
 import { CloudflareContext } from "~/lib/cloudflare";
 import * as schema from "~/db/schema";
 import { and, eq } from "drizzle-orm";
-import { Button, Card, EmptyState, Surface, Typography } from "@heroui/react";
-import { NavBar } from "~/organisms/nav-bar";
+import { Button, Card, EmptyState, Typography } from "@heroui/react";
 import * as v from "valibot";
 import type { PublishState } from "~/lib/content";
 import { PublishStateSelector } from "~/organisms/publish-state-selector";
 import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { EditContentTitleButton } from "~/organisms/edit-content-title-button";
 import { AddContentButton } from "~/organisms/add-content-button";
+import { Template } from "~/organisms/template";
 
 interface Content {
   id: string;
@@ -237,63 +237,53 @@ export default function Course({
   };
 
   return (
-    <>
-      <title>{`講座 ${course.name} - e-Quiz`}</title>
-      <div className="h-screen overflow-auto">
-        <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title={`講座 ${course.name}`} user={user} />
-        </Surface>
-        <div className="flex h-full flex-col gap-4 p-4">
-          <div className="flex justify-between">
-            <Typography type="h2">コンテンツ一覧</Typography>
-            <div className="flex gap-2">
-              {user.type === "teacher" && (
-                <>
-                  <CopyInviteLink courseId={course.id} />
-                  <AddContentButton courseId={course.id} />
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {contents.length === 0 ? (
-              user.type === "student" ? (
-                <EmptyState>まだ公開されているコンテンツがありません</EmptyState>
-              ) : (
-                <EmptyState>
-                  「コンテンツを新規追加」ボタンからコンテンツを追加しましょう
-                </EmptyState>
-              )
-            ) : (
-              contents.map(({ id, title, publishState }) => (
-                <Card key={id}>
-                  <Card.Content>
-                    <div className="flex justify-between">
-                      <Link to={`/courses/${course.id}/contents/${id}`}>
-                        <Typography type="h3">{title}</Typography>
-                      </Link>
-                      <div className="flex items-center gap-2">
-                        {user.type === "teacher" && (
-                          <>
-                            <PublishStateSelector
-                              publishState={publishState}
-                              onChange={onChangePublishState(id)}
-                            />
-                            <EditContentTitleButton contentId={id} oldTitle={title} />
-                          </>
-                        )}
-                        <Link to={`/courses/${course.id}/contents/${id}`}>
-                          <Button variant="ghost">開く</Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </Card.Content>
-                </Card>
-              ))
-            )}
-          </div>
+    <Template title={`講座 ${course.name}`} user={user}>
+      <div className="flex justify-between">
+        <Typography type="h2">コンテンツ一覧</Typography>
+        <div className="flex gap-2">
+          {user.type === "teacher" && (
+            <>
+              <CopyInviteLink courseId={course.id} />
+              <AddContentButton courseId={course.id} />
+            </>
+          )}
         </div>
       </div>
-    </>
+      <div className="flex flex-col gap-2">
+        {contents.length === 0 ? (
+          user.type === "student" ? (
+            <EmptyState>まだ公開されているコンテンツがありません</EmptyState>
+          ) : (
+            <EmptyState>「コンテンツを新規追加」ボタンからコンテンツを追加しましょう</EmptyState>
+          )
+        ) : (
+          contents.map(({ id, title, publishState }) => (
+            <Card key={id}>
+              <Card.Content>
+                <div className="flex justify-between">
+                  <Link to={`/courses/${course.id}/contents/${id}`}>
+                    <Typography type="h3">{title}</Typography>
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    {user.type === "teacher" && (
+                      <>
+                        <PublishStateSelector
+                          publishState={publishState}
+                          onChange={onChangePublishState(id)}
+                        />
+                        <EditContentTitleButton contentId={id} oldTitle={title} />
+                      </>
+                    )}
+                    <Link to={`/courses/${course.id}/contents/${id}`}>
+                      <Button variant="ghost">開く</Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          ))
+        )}
+      </div>
+    </Template>
   );
 }

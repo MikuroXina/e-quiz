@@ -4,8 +4,8 @@ import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { NavBar } from "~/organisms/nav-bar";
-import { EmptyState, Surface, Table } from "@heroui/react";
+import { EmptyState, Table } from "@heroui/react";
+import { Template } from "~/organisms/template";
 
 interface Indicator {
   studentId: string;
@@ -130,54 +130,48 @@ export default function StatsPage({
   loaderData: { userName, courseName, indicators },
 }: Route.ComponentProps): React.JSX.Element {
   return (
-    <>
-      <title>{`${courseName} の統計 - e-Quiz`}</title>
-      <div className="h-screen overflow-auto">
-        <Surface className="sticky top-0 z-10 drop-shadow-md">
-          <NavBar title={`${courseName} の統計`} user={{ type: "teacher", name: userName }} />
-        </Surface>
-        <div>
-          <h2>ヒストグラム</h2>
-          histogram…
-        </div>
-        <div>
-          <h2>データ表</h2>
-          <Table>
-            <Table.ScrollContainer>
-              <Table.Content>
-                <Table.Header>
-                  <Table.Column isRowHeader>受講者名</Table.Column>
-                  <Table.Column>正解数</Table.Column>
-                  <Table.Column>進捗</Table.Column>
-                  <Table.Column>つまづき度</Table.Column>
-                  <Table.Column>学習の速さ</Table.Column>
-                  <Table.Column>回答の慎重さ</Table.Column>
-                </Table.Header>
-                <Table.Body
-                  renderEmptyState={() => (
-                    <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
-                      <span className="text-muted text-sm">まだ受講者が居ません</span>
-                    </EmptyState>
-                  )}
-                >
-                  {indicators.map(
-                    ({ studentId, studentName, corrects, progress, stumble, speed, prudence }) => (
-                      <Table.Row key={studentId}>
-                        <Table.Cell>{studentName}</Table.Cell>
-                        <Table.Cell>{corrects}</Table.Cell>
-                        <Table.Cell>{progress}</Table.Cell>
-                        <Table.Cell>{stumble ?? "-"}</Table.Cell>
-                        <Table.Cell>{speed ?? "-"}</Table.Cell>
-                        <Table.Cell>{prudence ?? "-"}</Table.Cell>
-                      </Table.Row>
-                    ),
-                  )}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
-        </div>
+    <Template title={`${courseName} の統計`} user={{ type: "teacher", name: userName }}>
+      <div>
+        <h2>ヒストグラム</h2>
+        histogram…
       </div>
-    </>
+      <div>
+        <h2>データ表</h2>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content>
+              <Table.Header>
+                <Table.Column isRowHeader>受講者名</Table.Column>
+                <Table.Column>正解数</Table.Column>
+                <Table.Column>進捗</Table.Column>
+                <Table.Column>つまづき度</Table.Column>
+                <Table.Column>学習の速さ</Table.Column>
+                <Table.Column>回答の慎重さ</Table.Column>
+              </Table.Header>
+              <Table.Body
+                renderEmptyState={() => (
+                  <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                    <span className="text-muted text-sm">まだ受講者が居ません</span>
+                  </EmptyState>
+                )}
+              >
+                {indicators.map(
+                  ({ studentId, studentName, corrects, progress, stumble, speed, prudence }) => (
+                    <Table.Row key={studentId}>
+                      <Table.Cell>{studentName}</Table.Cell>
+                      <Table.Cell>{corrects}</Table.Cell>
+                      <Table.Cell>{progress}</Table.Cell>
+                      <Table.Cell>{stumble ?? "-"}</Table.Cell>
+                      <Table.Cell>{speed ?? "-"}</Table.Cell>
+                      <Table.Cell>{prudence ?? "-"}</Table.Cell>
+                    </Table.Row>
+                  ),
+                )}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
+      </div>
+    </Template>
   );
 }
