@@ -1,5 +1,5 @@
-import { Button, Card, EmptyState, Input, Label, Modal, Tooltip, Typography } from "@heroui/react";
-import { Link, useFetcher } from "react-router";
+import { Button, Card, EmptyState, Typography } from "@heroui/react";
+import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { AuthContext } from "~/lib/session";
 import { CloudflareContext } from "~/lib/cloudflare";
@@ -7,9 +7,10 @@ import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import Pencil from "@gravity-ui/icons/Pencil";
 import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { Template } from "~/organisms/template";
+import { AddCourseButton } from "~/organisms/add-course-button";
+import { EditCourseNameButton } from "~/organisms/edit-course-name-button";
 
 interface Course {
   id: string;
@@ -196,91 +197,5 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
         )}
       </div>
     </Template>
-  );
-}
-
-function AddCourseButton() {
-  const fetcher = useFetcher({ key: "courses" });
-
-  return (
-    <Modal>
-      <Button>講座を新規追加</Button>
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>新規講座の情報を入力</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <fetcher.Form method="POST" className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="course_name">名前</Label>
-                  <Input
-                    id="course_name"
-                    name="name"
-                    className="min-w-8"
-                    placeholder="某講座"
-                    required
-                  />
-                </div>
-                <Button className="self-end" type="submit">
-                  追加する
-                </Button>
-              </fetcher.Form>
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
-  );
-}
-
-function EditCourseNameButton({ courseId, oldName }: { courseId: string; oldName: string }) {
-  const fetcher = useFetcher({ key: "courses" });
-
-  return (
-    <Modal>
-      <Tooltip delay={0}>
-        <Tooltip.Trigger>
-          <Button isIconOnly variant="secondary">
-            <Pencil />
-          </Button>
-        </Tooltip.Trigger>
-        <Tooltip.Content>
-          <Tooltip.Arrow />
-          講座情報を編集
-        </Tooltip.Content>
-      </Tooltip>
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog>
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>講座「{oldName}」の新しい名前を入力</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <fetcher.Form method="PUT" className="flex flex-col gap-4">
-                <input type="hidden" name="course_id" value={courseId} />
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="new_course_name">名前</Label>
-                  <Input
-                    id="new_course_name"
-                    name="course_name"
-                    className="min-w-8"
-                    placeholder="某講座"
-                    required
-                    defaultValue={oldName}
-                  />
-                </div>
-                <Button className="self-end" type="submit">
-                  変更する
-                </Button>
-              </fetcher.Form>
-            </Modal.Body>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
   );
 }
