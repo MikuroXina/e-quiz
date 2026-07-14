@@ -88,7 +88,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     id: faker.string.uuid(),
     name: faker.person.fullName(),
   });
-  const students = [...new Array(6)].map(newStudent);
+  const students = [...new Array(20)].map(newStudent);
   students[0].id = myId;
   await db.insert(schema.student).values(students);
 
@@ -103,12 +103,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   await db
     .insert(schema.enrollment)
     .values([
-      newEnrollment(courses[0].id, students[0].id),
-      newEnrollment(courses[0].id, students[1].id),
-      newEnrollment(courses[0].id, students[2].id),
-      newEnrollment(courses[0].id, students[3].id),
-      newEnrollment(courses[0].id, students[4].id),
-      newEnrollment(courses[0].id, students[5].id),
+      ...students.map((student) => newEnrollment(courses[0].id, student.id)),
       newEnrollment(courses[1].id, students[0].id),
       newEnrollment(courses[1].id, students[1].id),
       newEnrollment(courses[1].id, students[5].id),
@@ -127,11 +122,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   await db
     .insert(schema.firstView)
     .values([
-      newFirstView(students[0].id, contents[0].id),
-      newFirstView(students[1].id, contents[0].id),
-      newFirstView(students[2].id, contents[0].id),
-      newFirstView(students[3].id, contents[0].id),
-      newFirstView(students[4].id, contents[0].id),
+      ...students.map((student) => newFirstView(student.id, contents[0].id)),
       newFirstView(students[0].id, contents[1].id),
       newFirstView(students[1].id, contents[1].id),
       newFirstView(students[2].id, contents[1].id),
@@ -158,19 +149,13 @@ export async function loader({ context }: Route.LoaderArgs) {
   });
   await db
     .insert(schema.submission)
-    .values([
-      newWrongSubmission(students[0].id, quizzes[0].id),
-      newWrongSubmission(students[0].id, quizzes[0].id),
-      newWrongSubmission(students[0].id, quizzes[0].id),
-      newWrongSubmission(students[1].id, quizzes[0].id),
-      newWrongSubmission(students[1].id, quizzes[0].id),
-      newWrongSubmission(students[1].id, quizzes[0].id),
-      newWrongSubmission(students[2].id, quizzes[0].id),
-      newWrongSubmission(students[2].id, quizzes[0].id),
-      newWrongSubmission(students[3].id, quizzes[0].id),
-      newCorrectSubmission(students[0].id, quizzes[0].id),
-      newCorrectSubmission(students[2].id, quizzes[0].id),
-    ]);
+    .values(students.map((student) => newWrongSubmission(student.id, quizzes[0].id)));
+  await db
+    .insert(schema.submission)
+    .values(students.map((student) => newWrongSubmission(student.id, quizzes[0].id)));
+  await db
+    .insert(schema.submission)
+    .values(students.map((student) => newCorrectSubmission(student.id, quizzes[0].id)));
 
   return { success: true };
 }
