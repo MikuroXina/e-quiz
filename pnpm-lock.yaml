@@ -57,6 +57,9 @@ importers:
       '@cloudflare/vite-plugin':
         specifier: ^1.42.4
         version: 1.42.4(vite@8.1.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))(workerd@1.20260630.1)(wrangler@4.106.0(@cloudflare/workers-types@4.20260702.1))
+      '@faker-js/faker':
+        specifier: ^10.5.0
+        version: 10.5.0
       '@gravity-ui/icons':
         specifier: ^2.20.0
         version: 2.20.0(react@19.2.7)
@@ -843,6 +846,10 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@faker-js/faker@10.5.0':
+    resolution: {integrity: sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@formatjs/ecma402-abstract@2.3.6':
     resolution: {integrity: sha512-HJnTFeRM2kVFVr5gr5kH1XP6K0JcJtE7Lzvtr3FS/so5f1kpsqqqxy5JF+FRaO6H2qmcMfAUIox7AJteieRtVw==}
@@ -3882,6 +3889,8 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.1': {}
+
+  '@faker-js/faker@10.5.0': {}
 
   '@formatjs/ecma402-abstract@2.3.6':
     dependencies:
