@@ -1,3 +1,5 @@
+import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { Bar } from "react-chartjs-2";
 import { AuthContext } from "~/lib/session";
 import type { Route } from "./+types/stats";
 import { CloudflareContext } from "~/lib/cloudflare";
@@ -6,6 +8,9 @@ import * as schema from "~/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { EmptyState, Table } from "@heroui/react";
 import { Template } from "~/organisms/template";
+import { Histogram } from "~/organisms/histogram";
+
+Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface Indicator {
   studentId: string;
@@ -145,7 +150,13 @@ export default function StatsPage({
     <Template title={`${courseName} の統計`} user={{ type: "teacher", name: userName }}>
       <div>
         <h2>ヒストグラム</h2>
-        histogram…
+        <div>
+          <Histogram
+            nums={indicators.flatMap(({ stumble }) => (stumble == null ? [] : [stumble]))}
+            label="つまづき度"
+            bins={8}
+          />
+        </div>
       </div>
       <div>
         <h2>データ表</h2>
@@ -173,9 +184,9 @@ export default function StatsPage({
                       <Table.Cell>{studentName}</Table.Cell>
                       <Table.Cell>{corrects}</Table.Cell>
                       <Table.Cell>{progress}</Table.Cell>
-                      <Table.Cell>{stumble ?? "-"}</Table.Cell>
-                      <Table.Cell>{speed ?? "-"}</Table.Cell>
-                      <Table.Cell>{prudence ?? "-"}</Table.Cell>
+                      <Table.Cell>{stumble == null ? "-" : stumble.toFixed(3)}</Table.Cell>
+                      <Table.Cell>{speed == null ? "-" : speed.toPrecision(3)}</Table.Cell>
+                      <Table.Cell>{prudence == null ? "-" : prudence.toPrecision(3)}</Table.Cell>
                     </Table.Row>
                   ),
                 )}
