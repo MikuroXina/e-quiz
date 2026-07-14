@@ -21,6 +21,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   await db.delete(schema.enrollment);
   await db.delete(schema.student);
   await db.delete(schema.quiz);
+  await db.delete(schema.publishState);
   await db.delete(schema.content);
   await db.delete(schema.course);
   await db.delete(schema.teacher);
@@ -55,6 +56,14 @@ export async function loader({ context }: Route.LoaderArgs) {
   });
   const contents = [newContent(courses[0].id), newContent(courses[0].id)];
   await db.insert(schema.content).values(contents);
+
+  // insert publish states
+  const newPublishState = (contentId: string): InferInsertModel<typeof schema.publishState> => ({
+    contentId,
+    state: "PUBLISHED",
+    updatedAt: faker.date.recent({ days: { min: 7, max: 14 } }).toISOString(),
+  });
+  await db.insert(schema.publishState).values([newPublishState(contents[0].id)]);
 
   // insert quizzes
   const newQuiz = (contentId: string): InferInsertModel<typeof schema.quiz> => ({
