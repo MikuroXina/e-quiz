@@ -82,7 +82,7 @@ export async function loader({
       .limit(1);
 
     if (contentRes.length === 0) {
-      return new Response(null, { status: 404 });
+      return redirect(`/courses/${params.course_id}`);
     }
 
     const quizzesRes = await db.query.quiz.findMany({
@@ -146,7 +146,7 @@ export async function loader({
       where: (content, { eq }) => eq(content.id, params.content_id),
     });
     if (content == null) {
-      return new Response(null, { status: 404 });
+      return redirect(`/courses/${params.course_id}`);
     }
     const quizIds = content.quizzes.map(({ id }) => id);
     const quizzesRes = await db.query.quiz.findMany({

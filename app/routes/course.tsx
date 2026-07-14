@@ -45,10 +45,20 @@ export async function loader({
         columns: { name: true },
         where: (student, { eq }) => eq(student.id, auth.id),
       });
+
+      if (student == null) {
+        return redirectToLoginAndBack;
+      }
+
       const course = await db.query.course.findFirst({
         columns: { name: true },
         where: (course, { eq }) => eq(course.id, course_id),
       });
+
+      if (course == null) {
+        return redirect("/");
+      }
+
       const contents = await db
         .select({
           id: schema.content.id,
@@ -58,9 +68,6 @@ export async function loader({
         .from(schema.content)
         .leftJoin(schema.publishState, eq(schema.content.id, schema.publishState.contentId))
         .where(eq(schema.publishState.state, "PUBLISHED"));
-      if (student == null || course == null) {
-        return redirectToLoginAndBack;
-      }
 
       return {
         user: { type: "student", name: student.name },
@@ -99,9 +106,7 @@ export async function loader({
         where: (course, { eq, and }) => and(eq(course.id, course_id), eq(course.ownerId, auth.id)),
       });
       if (course == null) {
-        return new Response(null, {
-          status: 404,
-        });
+        return redirect("/");
       }
 
       return {
