@@ -16,14 +16,14 @@ export async function loader({ context }: Route.LoaderArgs) {
 
   console.log("Deleting database…");
 
-  await db.delete(schema.teacher);
-  await db.delete(schema.course);
-  await db.delete(schema.content);
-  await db.delete(schema.quiz);
-  await db.delete(schema.student);
-  await db.delete(schema.enrollment);
-  await db.delete(schema.firstView);
   await db.delete(schema.submission);
+  await db.delete(schema.firstView);
+  await db.delete(schema.enrollment);
+  await db.delete(schema.student);
+  await db.delete(schema.quiz);
+  await db.delete(schema.content);
+  await db.delete(schema.course);
+  await db.delete(schema.teacher);
 
   console.log("Injecting fake test data…");
 
@@ -99,7 +99,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       newEnrollment(courses[0].id, students[5].id),
       newEnrollment(courses[1].id, students[0].id),
       newEnrollment(courses[1].id, students[1].id),
-      newEnrollment(courses[1].id, students[6].id),
+      newEnrollment(courses[1].id, students[5].id),
       newEnrollment(courses[2].id, students[0].id),
     ]);
 
