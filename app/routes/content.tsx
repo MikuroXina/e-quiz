@@ -162,6 +162,7 @@ export async function loader({
           columns: {
             answer: true,
           },
+          where: (submission, { eq }) => eq(submission.createdById, auth.id),
           orderBy: (submission, { desc }) => desc(submission.createdAt),
           limit: 1,
         },
