@@ -11,6 +11,7 @@ import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { Template } from "~/organisms/template";
 import { AddCourseButton } from "~/organisms/add-course-button";
 import { EditCourseNameButton } from "~/organisms/edit-course-name-button";
+import PersonMagnifier from "@gravity-ui/icons/PersonMagnifier";
 
 interface Course {
   id: string;
@@ -183,6 +184,11 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
                     {loaderData.type === "teacher" && (
                       <>
                         <CopyInviteLink courseId={id} />
+                        <Link to={`/courses/${id}/stats`}>
+                          <Button variant="secondary" isIconOnly>
+                            <PersonMagnifier />
+                          </Button>
+                        </Link>
                         <EditCourseNameButton courseId={id} oldName={name} />
                       </>
                     )}
