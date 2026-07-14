@@ -29,6 +29,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   console.log("Injecting fake test data…");
 
   faker.seed(42);
+  const myId = "auth0|69c0b7d478b2b5818046fcd4";
 
   // insert teachers
   const newTeacher = (): InferInsertModel<typeof schema.teacher> => ({
@@ -36,6 +37,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     name: faker.person.fullName(),
   });
   const teachers = [newTeacher(), newTeacher(), newTeacher()];
+  teachers[0].id = myId;
   await db.insert(schema.teacher).values(teachers);
 
   // insert courses
@@ -87,6 +89,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     name: faker.person.fullName(),
   });
   const students = [...new Array(6)].map(newStudent);
+  students[0].id = myId;
   await db.insert(schema.student).values(students);
 
   // insert enrollments
