@@ -61,11 +61,14 @@ export async function loader({
         studentId: schema.submission.createdById,
         studentName: schema.student.name,
         createdAt: schema.submission.createdAt,
-        isCorrect: sql<number>`CASE WHEN ${schema.submission.answer} = ${schema.quiz.solution} THEN 1 ELSE 0 END`,
+        isCorrect:
+          sql<number>`CASE WHEN ${schema.submission.answer} = ${schema.quiz.solution} THEN 1 ELSE 0 END`.as(
+            "isCorrect",
+          ),
         attemptNum: sql<number>`ROW_NUMBER() OVER (
         PARTITION BY ${schema.submission.sentToId}, ${schema.submission.createdById}
         ORDER BY ${schema.submission.createdAt}
-      )`,
+      )`.as("attemptNum"),
       })
       .from(schema.submission)
       .innerJoin(schema.quiz, eq(schema.submission.sentToId, schema.quiz.id))
@@ -80,10 +83,16 @@ export async function loader({
         containerId: numbered.containerId,
         studentId: numbered.studentId,
         studentName: numbered.studentName,
-        firstSubmitAt: sql<number>`MIN(${numbered.createdAt})`,
-        firstCorrectAt: sql<number>`MIN(CASE WHEN ${numbered.isCorrect} = 1 THEN ${numbered.createdAt} END)`,
-        nthAttempt: sql<number>`MIN(CASE WHEN ${numbered.isCorrect} = 1 THEN ${numbered.attemptNum} END)`,
-        hasCorrect: sql<number>`MAX(${numbered.isCorrect})`,
+        firstSubmitAt: sql<number>`MIN(${numbered.createdAt})`.as("firstSubmitAt"),
+        firstCorrectAt:
+          sql<number>`MIN(CASE WHEN ${numbered.isCorrect} = 1 THEN ${numbered.createdAt} END)`.as(
+            "firstCorrectAt",
+          ),
+        nthAttempt:
+          sql<number>`MIN(CASE WHEN ${numbered.isCorrect} = 1 THEN ${numbered.attemptNum} END)`.as(
+            "nthAttempt",
+          ),
+        hasCorrect: sql<number>`MAX(${numbered.isCorrect})`.as("hasCorrect"),
       })
       .from(numbered)
       .groupBy(numbered.quizId, numbered.containerId, numbered.studentId),
@@ -93,26 +102,29 @@ export async function loader({
     .select({
       studentId: milestones.studentId,
       studentName: milestones.studentName,
-      corrects: sql<number>`SUM(${milestones.hasCorrect})`,
-      progress: sql<number>`CAST(SUM(${milestones.hasCorrect}) AS REAL) / COUNT(${milestones.quizId})`,
+      corrects: sql<number>`SUM(${milestones.hasCorrect})`.as("corrects"),
+      progress:
+        sql<number>`CAST(SUM(${milestones.hasCorrect}) AS REAL) / COUNT(${milestones.quizId})`.as(
+          "progress",
+        ),
       stumble: sql<number>`AVG(
-      CASE
-        WHEN ${milestones.hasCorrect} = 1
-        THEN CAST((${milestones.firstCorrectAt} - ${milestones.firstSubmitAt}) AS REAL) / NULLIF(${milestones.firstCorrectAt} - ${schema.firstView.createdAt}, 0)
-      END
-    )`,
+        CASE
+          WHEN ${milestones.hasCorrect} = 1
+          THEN CAST((${milestones.firstCorrectAt} - ${milestones.firstSubmitAt}) AS REAL) / NULLIF(${milestones.firstCorrectAt} - ${schema.firstView.createdAt}, 0)
+        END
+      )`.as("stumble"),
       speed: sql<number>`AVG(
-      CASE
-        WHEN ${milestones.hasCorrect} = 1
-        THEN CAST((${milestones.firstCorrectAt} - ${schema.firstView.createdAt}) AS REAL)
-      END
-    )`,
+        CASE
+          WHEN ${milestones.hasCorrect} = 1
+          THEN CAST((${milestones.firstCorrectAt} - ${schema.firstView.createdAt}) AS REAL)
+        END
+      )`.as("speed"),
       prudence: sql<number>`AVG(
-      CASE
-        WHEN ${milestones.hasCorrect} = 1
-        THEN CAST((${milestones.firstCorrectAt} - ${milestones.firstSubmitAt}) AS REAL) / ${milestones.nthAttempt}
-      END
-    )`,
+        CASE
+          WHEN ${milestones.hasCorrect} = 1
+          THEN CAST((${milestones.firstCorrectAt} - ${milestones.firstSubmitAt}) AS REAL) / ${milestones.nthAttempt}
+        END
+      )`.as("prudence"),
     })
     .from(milestones)
     .leftJoin(
