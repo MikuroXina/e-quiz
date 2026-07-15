@@ -1,22 +1,79 @@
-import { EmptyState, Table } from "@heroui/react";
+import { EmptyState, Table, type SortDescriptor } from "@heroui/react";
+import { useMemo, useState } from "react";
 import type { Indicator } from "~/lib/model";
 
 export interface StatsTableProps {
   indicators: readonly Indicator[];
 }
 
-export function StatsTable({ indicators }: StatsTableProps): React.JSX.Element {
+export function StatsTable({ indicators: source }: StatsTableProps): React.JSX.Element {
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: "studentName",
+    direction: "ascending",
+  });
+
+  const indicators = useMemo(
+    () =>
+      [...source].sort((a, b) => {
+        const col = sortDescriptor.column as keyof Indicator;
+        const left = a[col];
+        const right = b[col];
+        const cmp =
+          typeof left === "number" && typeof right === "number"
+            ? right - left
+            : a[col]!.toString().localeCompare(b[col]!.toString());
+        return sortDescriptor.direction === "ascending" ? cmp : -cmp;
+      }),
+    [sortDescriptor],
+  );
+
   return (
     <Table>
       <Table.ScrollContainer>
-        <Table.Content>
+        <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
           <Table.Header>
-            <Table.Column isRowHeader>受講者名</Table.Column>
-            <Table.Column>正解数</Table.Column>
-            <Table.Column>進捗</Table.Column>
-            <Table.Column>つまづき度</Table.Column>
-            <Table.Column>学習の速さ</Table.Column>
-            <Table.Column>回答の慎重さ</Table.Column>
+            <Table.Column id="studentName" allowsSorting isRowHeader>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  受講者名
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
+            <Table.Column id="corrects" allowsSorting>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  正解数
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
+            <Table.Column id="progress" allowsSorting>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  進捗
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
+            <Table.Column id="stumble" allowsSorting>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  つまづき度
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
+            <Table.Column id="speed" allowsSorting>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  学習の速さ
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
+            <Table.Column id="prudence" allowsSorting>
+              {({ sortDirection }) => (
+                <Table.SortableColumnHeader sortDirection={sortDirection}>
+                  回答の慎重さ
+                </Table.SortableColumnHeader>
+              )}
+            </Table.Column>
           </Table.Header>
           <Table.Body
             renderEmptyState={() => (
@@ -27,7 +84,7 @@ export function StatsTable({ indicators }: StatsTableProps): React.JSX.Element {
           >
             {indicators.map(
               ({ studentId, studentName, corrects, progress, stumble, speed, prudence }) => (
-                <Table.Row key={studentId}>
+                <Table.Row key={studentId} id={studentId}>
                   <Table.Cell>{studentName}</Table.Cell>
                   <Table.Cell>{corrects}</Table.Cell>
                   <Table.Cell>{progress}</Table.Cell>
