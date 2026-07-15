@@ -6,9 +6,11 @@ import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { EmptyState, Table } from "@heroui/react";
+import { Button, Disclosure, DisclosureGroup, EmptyState, Table, Typography } from "@heroui/react";
 import { Template } from "~/organisms/template";
 import { Histogram } from "~/organisms/histogram";
+import { redirect } from "react-router";
+import { useState } from "react";
 
 Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -34,7 +36,7 @@ export async function loader({
 }: Route.LoaderArgs): Promise<Response | LoaderData> {
   const auth = context.get(AuthContext);
   if (auth.type !== "teacher") {
-    return new Response(null, { status: 401 });
+    return redirect("/");
   }
 
   const { env } = context.get(CloudflareContext);
@@ -45,7 +47,7 @@ export async function loader({
     where: (teacher, { eq }) => eq(teacher.id, auth.id),
   });
   if (teacher == null) {
-    return new Response(null, { status: 401 });
+    return redirect("/");
   }
 
   const course = await db.query.course.findFirst({
@@ -55,7 +57,7 @@ export async function loader({
     where: (course, { eq }) => eq(course.ownerId, auth.id),
   });
   if (course == null) {
-    return new Response(null, { status: 404 });
+    return redirect("/courses");
   }
 
   const numbered = db.$with("numbered").as(
@@ -146,20 +148,78 @@ export async function loader({
 export default function StatsPage({
   loaderData: { userName, courseName, indicators },
 }: Route.ComponentProps): React.JSX.Element {
+  const [expandedKeys, setExpandedKeys] = useState(new Set<string | number>());
+
   return (
     <Template title={`${courseName} の統計`} user={{ type: "teacher", name: userName }}>
       <div>
-        <h2>ヒストグラム</h2>
-        <div>
-          <Histogram
-            nums={indicators.flatMap(({ stumble }) => (stumble == null ? [] : [stumble]))}
-            label="つまづき度"
-            bins={8}
-          />
-        </div>
+        <Typography type="h2">ヒストグラム</Typography>
+        <DisclosureGroup expandedKeys={expandedKeys} onExpandedChange={setExpandedKeys}>
+          <Disclosure id="stumble">
+            <Disclosure.Heading>
+              <Button slot="trigger" variant="ghost">
+                つまづき度
+                <Disclosure.Indicator />
+              </Button>
+            </Disclosure.Heading>
+            <Disclosure.Content>
+              <Disclosure.Body>
+                <div>
+                  <Histogram
+                    nums={indicators
+                      .map(({ stumble }) => stumble)
+                      .filter((value) => value !== null)}
+                    label="つまづき度"
+                    bins={8}
+                  />
+                </div>
+              </Disclosure.Body>
+            </Disclosure.Content>
+          </Disclosure>
+          <Disclosure id="speed">
+            <Disclosure.Heading>
+              <Button slot="trigger" variant="ghost">
+                学習の速さ
+                <Disclosure.Indicator />
+              </Button>
+            </Disclosure.Heading>
+            <Disclosure.Content>
+              <Disclosure.Body>
+                <div>
+                  <Histogram
+                    nums={indicators.map(({ speed }) => speed).filter((value) => value !== null)}
+                    label="学習の速さ"
+                    bins={8}
+                  />
+                </div>
+              </Disclosure.Body>
+            </Disclosure.Content>
+          </Disclosure>
+          <Disclosure id="prudence">
+            <Disclosure.Heading>
+              <Button slot="trigger" variant="ghost">
+                学習の慎重さ
+                <Disclosure.Indicator />
+              </Button>
+            </Disclosure.Heading>
+            <Disclosure.Content>
+              <Disclosure.Body>
+                <div>
+                  <Histogram
+                    nums={indicators
+                      .map(({ prudence }) => prudence)
+                      .filter((value) => value !== null)}
+                    label="学習の慎重さ"
+                    bins={8}
+                  />
+                </div>
+              </Disclosure.Body>
+            </Disclosure.Content>
+          </Disclosure>
+        </DisclosureGroup>
       </div>
       <div>
-        <h2>データ表</h2>
+        <Typography type="h2">データ表</Typography>
         <Table>
           <Table.ScrollContainer>
             <Table.Content>

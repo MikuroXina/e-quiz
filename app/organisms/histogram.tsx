@@ -29,7 +29,7 @@ export function Histogram({ bins, nums, label }: HistogramProps): React.JSX.Elem
       data={{
         labels: [...new Array(bins)].map(
           (_, i) =>
-            `${(i * binWidth + numsMin).toFixed(3)} - ${((i + 1) * binWidth + numsMin).toFixed(3)}`,
+            `${(i * binWidth + numsMin).toPrecision(3)} - ${((i + 1) * binWidth + numsMin).toPrecision(3)}`,
         ),
         datasets: [
           {
