@@ -1,28 +1,20 @@
 import { Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
-import { Bar } from "react-chartjs-2";
 import { AuthContext } from "~/lib/session";
 import type { Route } from "./+types/stats";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { Button, Disclosure, DisclosureGroup, EmptyState, Table, Typography } from "@heroui/react";
+import { Button, Disclosure, DisclosureGroup, Typography } from "@heroui/react";
 import { Template } from "~/organisms/template";
 import { Histogram } from "~/organisms/histogram";
 import { redirect } from "react-router";
 import { useState } from "react";
+import type { Indicator } from "~/lib/model";
+import { StatsTable } from "~/organisms/stats-table";
+import { HistogramDisclosure } from "~/organisms/histogram-disclosure";
 
 Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-interface Indicator {
-  studentId: string;
-  studentName: string;
-  corrects: number;
-  progress: number;
-  stumble: number | null;
-  speed: number | null;
-  prudence: number | null;
-}
 
 interface LoaderData {
   userName: string;
@@ -155,105 +147,26 @@ export default function StatsPage({
       <div>
         <Typography type="h2">ヒストグラム</Typography>
         <DisclosureGroup expandedKeys={expandedKeys} onExpandedChange={setExpandedKeys}>
-          <Disclosure id="stumble">
-            <Disclosure.Heading>
-              <Button slot="trigger" variant="ghost">
-                つまづき度
-                <Disclosure.Indicator />
-              </Button>
-            </Disclosure.Heading>
-            <Disclosure.Content>
-              <Disclosure.Body>
-                <div>
-                  <Histogram
-                    nums={indicators
-                      .map(({ stumble }) => stumble)
-                      .filter((value) => value !== null)}
-                    label="つまづき度"
-                    bins={8}
-                  />
-                </div>
-              </Disclosure.Body>
-            </Disclosure.Content>
-          </Disclosure>
-          <Disclosure id="speed">
-            <Disclosure.Heading>
-              <Button slot="trigger" variant="ghost">
-                学習の速さ
-                <Disclosure.Indicator />
-              </Button>
-            </Disclosure.Heading>
-            <Disclosure.Content>
-              <Disclosure.Body>
-                <div>
-                  <Histogram
-                    nums={indicators.map(({ speed }) => speed).filter((value) => value !== null)}
-                    label="学習の速さ"
-                    bins={8}
-                  />
-                </div>
-              </Disclosure.Body>
-            </Disclosure.Content>
-          </Disclosure>
-          <Disclosure id="prudence">
-            <Disclosure.Heading>
-              <Button slot="trigger" variant="ghost">
-                学習の慎重さ
-                <Disclosure.Indicator />
-              </Button>
-            </Disclosure.Heading>
-            <Disclosure.Content>
-              <Disclosure.Body>
-                <div>
-                  <Histogram
-                    nums={indicators
-                      .map(({ prudence }) => prudence)
-                      .filter((value) => value !== null)}
-                    label="学習の慎重さ"
-                    bins={8}
-                  />
-                </div>
-              </Disclosure.Body>
-            </Disclosure.Content>
-          </Disclosure>
+          <HistogramDisclosure
+            id="stumble"
+            label="つまづき度"
+            nums={indicators.map(({ stumble }) => stumble).filter((value) => value !== null)}
+          />
+          <HistogramDisclosure
+            id="speed"
+            label="学習の速さ"
+            nums={indicators.map(({ speed }) => speed).filter((value) => value !== null)}
+          />
+          <HistogramDisclosure
+            id="prudence"
+            label="学習の慎重さ"
+            nums={indicators.map(({ prudence }) => prudence).filter((value) => value !== null)}
+          />
         </DisclosureGroup>
       </div>
       <div>
         <Typography type="h2">データ表</Typography>
-        <Table>
-          <Table.ScrollContainer>
-            <Table.Content>
-              <Table.Header>
-                <Table.Column isRowHeader>受講者名</Table.Column>
-                <Table.Column>正解数</Table.Column>
-                <Table.Column>進捗</Table.Column>
-                <Table.Column>つまづき度</Table.Column>
-                <Table.Column>学習の速さ</Table.Column>
-                <Table.Column>回答の慎重さ</Table.Column>
-              </Table.Header>
-              <Table.Body
-                renderEmptyState={() => (
-                  <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
-                    <span className="text-muted text-sm">まだ受講者が居ません</span>
-                  </EmptyState>
-                )}
-              >
-                {indicators.map(
-                  ({ studentId, studentName, corrects, progress, stumble, speed, prudence }) => (
-                    <Table.Row key={studentId}>
-                      <Table.Cell>{studentName}</Table.Cell>
-                      <Table.Cell>{corrects}</Table.Cell>
-                      <Table.Cell>{progress}</Table.Cell>
-                      <Table.Cell>{stumble == null ? "-" : stumble.toFixed(3)}</Table.Cell>
-                      <Table.Cell>{speed == null ? "-" : speed.toPrecision(3)}</Table.Cell>
-                      <Table.Cell>{prudence == null ? "-" : prudence.toPrecision(3)}</Table.Cell>
-                    </Table.Row>
-                  ),
-                )}
-              </Table.Body>
-            </Table.Content>
-          </Table.ScrollContainer>
-        </Table>
+        <StatsTable indicators={indicators} />
       </div>
     </Template>
   );
