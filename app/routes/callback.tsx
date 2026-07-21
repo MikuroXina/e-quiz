@@ -4,8 +4,9 @@ import { CloudflareContext } from "~/lib/cloudflare";
 import * as v from "valibot";
 import { redirect } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
-import { student, teacher } from "~/db/schema";
 import { UserInfoClient } from "auth0";
+import { upsertTeacher } from "~/repositories/teacher";
+import { upsertStudent } from "~/repositories/student";
 
 const getTokenResponseSchema = v.object({
   access_token: v.string(),
@@ -77,29 +78,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
     const db = drizzle(env.e_quiz_db);
     if (entryKind === "TEACHER") {
-      await db
-        .insert(teacher)
-        .values({
-          id: user.sub,
-          name,
-        })
-        .onConflictDoUpdate({
-          target: teacher.id,
-          set: { name },
-        })
-        .execute();
+      await upsertTeacher(db, user.sub, name);
     } else {
-      await db
-        .insert(student)
-        .values({
-          id: user.sub,
-          name,
-        })
-        .onConflictDoUpdate({
-          target: student.id,
-          set: { name },
-        })
-        .execute();
+      await upsertStudent(db, user.sub, name);
     }
 
     const headers = new Headers();

@@ -5,13 +5,13 @@ import { AuthContext } from "~/lib/session";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
-import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { Template } from "~/organisms/template";
 import { AddCourseButton } from "~/organisms/add-course-button";
 import { EditCourseNameButton } from "~/organisms/edit-course-name-button";
 import PersonMagnifier from "@gravity-ui/icons/PersonMagnifier";
+import { createCourse, updateName } from "~/repositories/course";
 
 interface Course {
   id: string;
@@ -102,31 +102,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       return new Response(null, { status: 400 });
     }
     const body = parseRes.output;
-
     const { env } = context.get(CloudflareContext);
     const db = drizzle(env.e_quiz_db, { schema });
-    const target = await db.query.course.findFirst({
-      columns: { id: true },
-      where: (course, { eq, and }) =>
-        and(eq(course.id, body.course_id), eq(course.ownerId, auth.id)),
-    });
-    if (target == null) {
+    const res = await updateName(db, auth.id, body.course_id, body.course_name);
+    if (!res.success) {
       console.log("target is not created by the authorized user: ", auth);
       return new Response(null, { status: 400 });
     }
-    try {
-      await db
-        .update(schema.course)
-        .set({
-          name: body.course_name,
-        })
-        .where(eq(schema.course.id, body.course_id))
-        .execute();
-      return { success: true };
-    } catch (err: unknown) {
-      console.log("failed to change name of the course: ", err);
-      return new Response(null, { status: 500 });
-    }
+    return { success: true };
   }
 
   const parseRes = v.safeParse(postCourseSchema, form);
@@ -138,21 +121,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  const newId = crypto.randomUUID();
-  try {
-    await db
-      .insert(schema.course)
-      .values({
-        id: newId,
-        name: body.name,
-        ownerId: auth.id,
-      })
-      .execute();
-    return { success: true };
-  } catch (err: unknown) {
-    console.log("failed to add a new course: ", err);
-    return new Response(null, { status: 500 });
-  }
+  await createCourse(db, auth.id, body.name);
+  return { success: true };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps): React.JSX.Element {

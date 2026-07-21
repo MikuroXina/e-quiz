@@ -13,6 +13,7 @@ import { CopyInviteLink } from "~/organisms/copy-invite-link";
 import { EditContentTitleButton } from "~/organisms/edit-content-title-button";
 import { AddContentButton } from "~/organisms/add-content-button";
 import { Template } from "~/organisms/template";
+import { createContent, setPublishState, setTitle } from "~/repositories/content";
 
 interface Content {
   id: string;
@@ -163,48 +164,27 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     const { env } = context.get(CloudflareContext);
     const db = drizzle(env.e_quiz_db, { schema });
-    const target = await db
-      .select({ id: schema.content.id })
-      .from(schema.content)
-      .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
-      .innerJoin(schema.teacher, eq(schema.course.ownerId, schema.teacher.id))
-      .where(and(eq(schema.content.id, body.content_id), eq(schema.teacher.id, auth.id)))
-      .limit(1);
-    if (target.length === 0) {
-      console.log("target is not created by the authorized user: ", auth);
-      return new Response(null, { status: 400 });
-    }
-    try {
-      switch (body.type) {
-        case "SET_TITLE":
-          await db
-            .update(schema.content)
-            .set({ title: body.content_title })
-            .where(eq(schema.content.id, body.content_id))
-            .execute();
-          break;
-        case "SET_PUBLISH_STATE":
-          await db
-            .insert(schema.publishState)
-            .values({
-              contentId: body.content_id,
-              state: body.state,
-              updatedAt: new Date().toISOString(),
-            })
-            .onConflictDoUpdate({
-              target: schema.publishState.contentId,
-              set: {
-                state: body.state,
-                updatedAt: new Date().toISOString(),
-              },
-            });
-          break;
+    switch (body.type) {
+      case "SET_TITLE": {
+        const res = await setTitle(db, auth.id, body.content_id, body.content_title);
+        if (!res.success) {
+          console.log("target is not created by the authorized user: ", auth);
+          return new Response(null, { status: 400 });
+        }
+        break;
       }
-      return { success: true };
-    } catch (err: unknown) {
-      console.log("failed to update title of the content: ", err);
-      return new Response(null, { status: 500 });
+      case "SET_PUBLISH_STATE": {
+        const res = await setPublishState(db, auth.id, body.content_id, {
+          type: body.state,
+        });
+        if (!res.success) {
+          console.log("target is not created by the authorized user: ", auth);
+          return new Response(null, { status: 400 });
+        }
+        break;
+      }
     }
+    return { success: true };
   }
 
   const bodyRes = v.safeParse(postContentSchema, formData);
@@ -216,22 +196,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  const newId = crypto.randomUUID();
-  try {
-    await db
-      .insert(schema.content)
-      .values({
-        id: newId,
-        containerId: body.container,
-        title: body.name,
-        content: "",
-      })
-      .execute();
-    return { success: true };
-  } catch (err: unknown) {
-    console.log("failed to insert a new content: ", body);
-    return new Response(null, { status: 500 });
-  }
+  await createContent(db, body.container, body.name);
 }
 
 export default function Course({

@@ -5,6 +5,7 @@ import { AuthContext } from "~/lib/session";
 import { Form, redirect } from "react-router";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "../db/schema";
+import { upsertEnrollment } from "~/repositories/enrollment";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const searchParams = new URL(request.url).searchParams;
@@ -59,20 +60,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  try {
-    await db
-      .insert(schema.enrollment)
-      .values({
-        studentId: auth.id,
-        courseId,
-      })
-      .onConflictDoNothing()
-      .execute();
-    return redirect("/");
-  } catch (err: unknown) {
-    console.log("failed to enroll the course: ", err);
-    return new Response(null, { status: 500 });
-  }
+  await upsertEnrollment(db, auth.id, courseId);
+  return redirect("/");
 }
 
 export default function InvitePage({

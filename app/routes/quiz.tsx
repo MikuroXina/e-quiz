@@ -3,7 +3,7 @@ import type { Route } from "./+types/quiz";
 import * as v from "valibot";
 import { CloudflareContext } from "~/lib/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
-import * as schema from "~/db/schema";
+import { createSubmission } from "~/repositories/submission";
 
 export const submitSchema = v.object({
   answer: v.pipe(v.string(), v.toNumber(), v.integer()),
@@ -29,10 +29,5 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  await db.insert(schema.submission).values({
-    createdById: auth.id,
-    sentToId: params.quiz_id,
-    createdAt: new Date(),
-    answer,
-  });
+  await createSubmission(db, auth.id, params.quiz_id, new Date(), answer);
 }

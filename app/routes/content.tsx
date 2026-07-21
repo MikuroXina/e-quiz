@@ -12,6 +12,8 @@ import { ContentEditor } from "~/organisms/content-editor";
 import { contentSchema, type Content } from "~/lib/content";
 import { ContentView } from "~/organisms/content-view";
 import { mdToHtml } from "~/lib/markdown";
+import { upsertFirstView } from "~/repositories/first-view";
+import { updateContent } from "~/repositories/content";
 
 const choicesSchema = v.array(v.string());
 
@@ -176,13 +178,7 @@ export async function loader({
       answerStatus: submissions.length === 0 ? null : solution === submissions[0].answer,
     }));
 
-    await db
-      .insert(schema.firstView)
-      .values({
-        whoId: auth.id,
-        readId: params.content_id,
-      })
-      .onConflictDoNothing();
+    await upsertFirstView(db, auth.id, params.content_id);
 
     const previewHtml = await mdToHtml(content.content);
 
@@ -221,57 +217,14 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
-  const target = await db
-    .select({ id: schema.content.id })
-    .from(schema.content)
-    .innerJoin(schema.course, eq(schema.content.containerId, schema.course.id))
-    .innerJoin(schema.teacher, eq(schema.course.ownerId, auth.id))
-    .where(eq(schema.content.id, body.new_content.id))
-    .limit(1);
-  if (target.length === 0) {
+
+  const res = await updateContent(db, auth.id, body.new_content);
+
+  if (!res.success) {
     console.log("target is not created by the authorized user: ", auth);
     return data({ success: false }, { status: 400 });
   }
-  try {
-    const updatedAt = body.new_content.publishState?.publishedAt ?? new Date().toISOString();
-    await db.batch([
-      db
-        .insert(schema.publishState)
-        .values({
-          contentId: body.new_content.id,
-          state: body.new_content.publishState.type,
-          updatedAt,
-        })
-        .onConflictDoUpdate({
-          target: schema.publishState.contentId,
-          set: {
-            state: body.new_content.publishState.type,
-            updatedAt,
-          },
-        }),
-      db
-        .update(schema.content)
-        .set({
-          content: body.new_content.body,
-        })
-        .where(eq(schema.content.id, body.new_content.id)),
-      ...body.new_content.quizzes.map((quiz, i) =>
-        db
-          .update(schema.quiz)
-          .set({
-            order: i,
-            description: quiz.description,
-            solution: quiz.solution,
-            choices: JSON.stringify(quiz.choices),
-          })
-          .where(eq(schema.quiz.id, quiz.id)),
-      ),
-    ]);
-    return { success: true };
-  } catch (err: unknown) {
-    console.log("failed to update body of the content: ", err);
-    return data({ success: false }, { status: 500 });
-  }
+  return { success: true };
 }
 
 export default function ContentPage({
