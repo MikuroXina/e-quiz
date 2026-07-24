@@ -11,4 +11,5 @@ export default [
   route("log_out", "routes/log-out.tsx"),
   route("callback", "routes/callback.tsx"),
   route("init_fake", "routes/init-fake.tsx"),
+  route("init_session", "routes/init-session.tsx"),
 ] satisfies RouteConfig;

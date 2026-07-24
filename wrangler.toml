@@ -7,6 +7,7 @@ workers_dev = false
 dev.port = 8787
 
 [vars]
+NODE_ENV = "development"
 AUTH0_AUDIENCE = "https://mikuroxina.jp.auth0.com/api/v2/"
 AUTH0_DOMAIN = "mikuroxina.jp.auth0.com"
 AUTH0_CLIENT_ID = "7diBR40dXPZwOH65zchO9514YFMySJxN"

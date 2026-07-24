@@ -32,8 +32,17 @@ export const getOAuthStateStorage = (env: Env) =>
     },
   });
 
+export interface AuthSession {
+  accessToken: string;
+  entryKind: EntryKind;
+  /**
+   * ID of student/teacher used to evade login scheme. It must be empty on production env.
+   */
+  testId: string;
+}
+
 export const getAuthStorage = (env: Env) =>
-  createCookieSessionStorage<{ accessToken: string; entryKind: EntryKind }>({
+  createCookieSessionStorage<AuthSession>({
     cookie: {
       name: "__e_quiz_session",
       secrets: [env.COOKIE_SECRET],
@@ -65,27 +74,36 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   const { env } = context.get(CloudflareContext);
   const storage = getAuthStorage(env);
   const session = await storage.getSession(request.headers.get("Cookie"));
+  const testId = session.get("testId") ?? "";
+  if (testId !== "" && env.NODE_ENV !== "development") {
+    throw new Error("test id was activated on not development environment");
+  }
+
   const accessToken = session.get("accessToken");
   const entryKind = session.get("entryKind");
-  if (accessToken == null || entryKind == null) {
+  if (entryKind == null) {
     context.set(AuthContext, {
       type: "unauthorized",
     });
     return;
   }
 
-  const { data: user } = await new UserInfoClient({
-    domain: env.AUTH0_DOMAIN,
-  }).getUserInfo(accessToken);
+  let id = testId;
+  if (testId !== "" && accessToken != null) {
+    const { data: user } = await new UserInfoClient({
+      domain: env.AUTH0_DOMAIN,
+    }).getUserInfo(accessToken);
+    id = user.sub;
+  }
   if (entryKind === "TEACHER") {
     context.set(AuthContext, {
       type: "teacher",
-      id: user.sub,
+      id,
     });
   } else {
     context.set(AuthContext, {
       type: "student",
-      id: user.sub,
+      id,
     });
   }
 };
