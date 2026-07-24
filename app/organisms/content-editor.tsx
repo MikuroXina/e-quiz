@@ -257,7 +257,7 @@ function QuizzesList({ quizzes, dispatch }: QuizzesListProps) {
   return (
     <div className="flex flex-col gap-2">
       {quizzes.map(({ id, description, choices, solution }, quizIndex) => (
-        <Card key={id}>
+        <Card key={id} data-testid="quiz">
           <Card.Header>
             <Card.Description>
               <Label>
@@ -289,6 +289,7 @@ function QuizzesList({ quizzes, dispatch }: QuizzesListProps) {
                       className="mt-0"
                       value={`${choiceIndex}`}
                       onClick={() => dispatch({ type: "SET_ANSWER", quizIndex, choiceIndex })}
+                      data-testid="choice-radio"
                     >
                       <Radio.Content>
                         これが正解{" "}
@@ -301,6 +302,7 @@ function QuizzesList({ quizzes, dispatch }: QuizzesListProps) {
                       type="text"
                       placeholder="クイズの選択肢…"
                       defaultValue={choice}
+                      data-testid="choice-textbox"
                       onChange={debounce((event) =>
                         dispatch({
                           type: "EDIT_CHOICE_DESCRIPTION",

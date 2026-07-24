@@ -235,7 +235,7 @@ export default function Course({
           contents.map(({ id, title, publishState }) => (
             <Card key={id}>
               <Card.Content>
-                <div className="flex justify-between">
+                <div className="flex justify-between" data-testid="content-card">
                   <Link to={`/courses/${course.id}/contents/${id}`}>
                     <Typography type="h3">{title}</Typography>
                   </Link>
