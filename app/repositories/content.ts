@@ -1,7 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { Content, PublishState } from "~/lib/content";
 import * as schema from "~/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, not } from "drizzle-orm";
 import type { Result } from "~/lib/result";
 
 export type ContentError = "TARGET_NOT_CREATED_BY_OPERATOR";
@@ -116,16 +116,37 @@ export const updateContent = async (
         content: newContent.body,
       })
       .where(eq(schema.content.id, newContent.id)),
+    db.delete(schema.quiz).where(
+      and(
+        eq(schema.quiz.containerId, newContent.id),
+        not(
+          inArray(
+            schema.quiz.id,
+            newContent.quizzes.map(({ id }) => id),
+          ),
+        ),
+      ),
+    ),
     ...newContent.quizzes.map((quiz, i) =>
       db
-        .update(schema.quiz)
-        .set({
+        .insert(schema.quiz)
+        .values({
+          id: quiz.id,
+          containerId: newContent.id,
           order: i,
           description: quiz.description,
           solution: quiz.solution,
           choices: JSON.stringify(quiz.choices),
         })
-        .where(eq(schema.quiz.id, quiz.id)),
+        .onConflictDoUpdate({
+          target: schema.quiz.id,
+          set: {
+            order: i,
+            description: quiz.description,
+            solution: quiz.solution,
+            choices: JSON.stringify(quiz.choices),
+          },
+        }),
     ),
   ]);
   return { success: true, value: [] };
