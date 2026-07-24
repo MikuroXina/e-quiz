@@ -9,6 +9,6 @@ export async function initAndLogIn(
     id,
     entry_kind: kind,
   });
-  await page.goto("/init_fake");
-  await page.goto(`/init_session?${params}`);
+  await page.goto("/init_fake", { waitUntil: "domcontentloaded" });
+  await page.goto(`/init_session?${params}`, { waitUntil: "domcontentloaded" });
 }
