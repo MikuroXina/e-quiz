@@ -146,7 +146,7 @@ export default function Home({ loaderData }: Route.ComponentProps): React.JSX.El
           loaderData.courses.map(({ id, name }) => (
             <Card key={id}>
               <Card.Content>
-                <div className="flex justify-between">
+                <div data-testid="course-card" className="flex justify-between">
                   <Link to={`/courses/${id}`}>
                     <Typography type="h3">{name}</Typography>
                   </Link>

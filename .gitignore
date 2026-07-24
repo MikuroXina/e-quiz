@@ -9,3 +9,7 @@
 # Cloudflare Wrangler dev env
 .wrangler/
 .dev.vars
+
+# Playwright result
+playwright-report/
+test-results/
