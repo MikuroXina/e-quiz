@@ -9,6 +9,9 @@ export function debounce<A extends unknown[]>(
 ): Debounced<A> {
   let timerId = 0;
   const ret = (...args: A) => {
+    if (timerId === 0) {
+      fn(...args);
+    }
     clearTimeout(timerId);
     timerId = setTimeout(() => {
       fn(...args);
