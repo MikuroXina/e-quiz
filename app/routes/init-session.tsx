@@ -21,7 +21,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     { success: true },
     {
       headers: {
-        Cookie: await authStorage.commitSession(session),
+        "Set-Cookie": await authStorage.commitSession(session),
       },
     },
   );

@@ -89,7 +89,7 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   }
 
   let id = testId;
-  if (testId !== "" && accessToken != null) {
+  if (testId === "" && accessToken != null) {
     const { data: user } = await new UserInfoClient({
       domain: env.AUTH0_DOMAIN,
     }).getUserInfo(accessToken);
