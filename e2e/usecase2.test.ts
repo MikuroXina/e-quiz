@@ -21,11 +21,10 @@ test("A teacher can open an existing new course and edit existing content and qu
     .getByRole("link", { name: "開く" })
     .click();
 
-  await page.getByRole("textbox", { name: "本文" }).fill(`
-    # Hello, world!
+  await page.getByRole("textbox", { name: "本文" }).fill(`# Hello, world!
 
-    これは Markdown です. **Bold**, _Italic_, \`code\` が使えます.
-  `);
+これは Markdown です. **Bold**, _Italic_, \`code\` が使えます.
+`);
 
   const quiz1Container = page.getByTestId("quiz").filter({ hasText: "クイズ 1 の問題文" });
   await quiz1Container
