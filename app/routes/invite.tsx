@@ -61,7 +61,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(CloudflareContext);
   const db = drizzle(env.e_quiz_db);
   await upsertEnrollment(db, auth.id, courseId);
-  return redirect("/");
+  return redirect(`/courses/${courseId}`);
 }
 
 export default function InvitePage({
