@@ -2,8 +2,6 @@ import { test, expect } from "@playwright/test";
 import { initAndLogIn } from "./common";
 
 test("A teacher can preview an existing content", async ({ page }) => {
-  await initAndLogIn(page, "1a7170e4-a488-42fc-bfe9-e130564d5482", "TEACHER");
-
   await initAndLogIn(page, "auth0|69c0b7d478b2b5818046fcd4", "TEACHER");
 
   await page.goto("/");
