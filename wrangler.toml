@@ -19,7 +19,7 @@ database_id = "89ea0c44-4436-4429-8a99-9c003c3095ca"
 migrations_dir = "drizzle/migrations"
 
 [assets]
-directory = "./public/"
+directory = "./build/client"
 run_worker_first = ["!/app/*", "!/public/*", "!/@*", "!/node_modules/*", "/*"]
 not_found_handling = "single-page-application"
 
