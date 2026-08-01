@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "vite dev",
+    "dev": "CLOUDFLARE_ENV=development vite dev",
     "typecheck": "react-router typegen && tsc",
     "generate-types": "wrangler types",
     "fmt": "oxfmt",

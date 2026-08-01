@@ -7,15 +7,15 @@ workers_dev = false
 dev.port = 8787
 
 [vars]
-NODE_ENV = "development"
+NODE_ENV = "production"
 AUTH0_AUDIENCE = "https://mikuroxina.jp.auth0.com/api/v2/"
 AUTH0_DOMAIN = "mikuroxina.jp.auth0.com"
 AUTH0_CLIENT_ID = "7diBR40dXPZwOH65zchO9514YFMySJxN"
 
 [[d1_databases]]
 binding = "e_quiz_db"
-database_name = "e-quiz-db"
-database_id = "dbf03e26-6f61-4c99-9174-836da531c23b"
+database_name = "e_quiz_db_demo"
+database_id = "36ba954e-a306-4cee-b341-dfe86dd506d8"
 migrations_dir = "drizzle/migrations"
 
 [assets]
@@ -23,14 +23,14 @@ directory = "./public/"
 run_worker_first = ["!/app/*", "!/public/*", "!/@*", "!/node_modules/*", "/*"]
 not_found_handling = "single-page-application"
 
-[env.production.vars]
-NODE_ENV = "production"
+[env.development.vars]
+NODE_ENV = "development"
 AUTH0_AUDIENCE = "https://mikuroxina.jp.auth0.com/api/v2/"
 AUTH0_DOMAIN = "mikuroxina.jp.auth0.com"
 AUTH0_CLIENT_ID = "7diBR40dXPZwOH65zchO9514YFMySJxN"
 
-[[env.production.d1_databases]]
+[[env.development.d1_databases]]
 binding = "e_quiz_db"
-database_name = "e_quiz_db_demo"
-database_id = "36ba954e-a306-4cee-b341-dfe86dd506d8"
+database_name = "e-quiz-db"
+database_id = "dbf03e26-6f61-4c99-9174-836da531c23b"
 migrations_dir = "drizzle/migrations"
